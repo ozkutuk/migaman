@@ -1,0 +1,66 @@
+cabal-version:   3.0
+name:            migadu
+version:         0.1.0.0
+
+-- synopsis:
+-- description:
+license:         GPL-3.0-or-later
+license-file:    LICENSE
+author:          Berk Özkütük
+maintainer:      berk@ozkutuk.me
+
+-- copyright:
+category:        Web
+build-type:      Simple
+extra-doc-files: CHANGELOG.md
+
+-- extra-source-files:
+
+common common-extensions
+  default-extensions:
+    DataKinds
+    DerivingStrategies
+    DuplicateRecordFields
+    LambdaCase
+    OverloadedRecordDot
+
+  default-language:   GHC2021
+
+common warnings
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wpartial-fields
+    -Wredundant-constraints -fhide-source-paths -fshow-hole-constraints
+    -Wunused-packages
+
+library
+  import:
+    warnings
+    , common-extensions
+
+  exposed-modules: Migadu
+
+  -- other-modules:
+  -- other-extensions:
+  build-depends:
+    , aeson
+    , base        ^>=4.19.1.0
+    , bytestring
+    , req
+    , text
+    , time
+
+  hs-source-dirs:  src
+
+test-suite migadu-test
+  import:
+    warnings
+    , common-extensions
+
+  -- other-modules:
+  -- other-extensions:
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is:        Main.hs
+  build-depends:
+    , base    ^>=4.19.1.0
+    , migadu

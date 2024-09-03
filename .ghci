@@ -1,0 +1,3 @@
+:set -XOverloadedStrings
+
+:set -interactive-print=Text.Pretty.Simple.pPrint
