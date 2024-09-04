@@ -37,7 +37,10 @@ library
     warnings
     , common-extensions
 
-  exposed-modules: Migadu
+  exposed-modules:
+    Fields
+    Mailbox
+    Migadu
 
   -- other-modules:
   -- other-extensions:
