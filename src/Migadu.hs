@@ -40,6 +40,7 @@ data MigaduRequest a where
   MailboxesShow :: Text -> Text -> MigaduRequest (Mailbox Read)
   -- MailboxesShow :: Text -> Text -> MigaduRequest Aeson.Value
   MailboxesCreate :: Text -> Mailbox Create -> MigaduRequest (Mailbox Read)
+  MailboxesDelete :: Text -> Text -> MigaduRequest (Mailbox Read)
 
 mkAuthOpts :: MigaduAuth -> Req.Option 'Req.Https
 mkAuthOpts (MigaduAuth account key) = Req.basicAuth account key
@@ -317,6 +318,16 @@ mailboxesCreate auth domain mailbox =
       Req.jsonResponse
       (mkAuthOpts auth)
 
+mailboxesDelete :: MigaduAuth -> Text -> Text -> Req.Req (Mailbox Read)
+mailboxesDelete auth domain localPart =
+  Req.responseBody
+    <$> Req.req
+      Req.DELETE
+      (baseEndpoint /: "domains" /: domain /: "mailboxes" /: localPart)
+      Req.NoReqBody
+      Req.jsonResponse
+      (mkAuthOpts auth)
+
 aesonOptions :: Aeson.Options
 aesonOptions =
   Aeson.defaultOptions
@@ -330,3 +341,4 @@ runMigadu auth =
     MailboxesIndex domain -> mailboxesIndex auth domain
     MailboxesShow domain mailbox -> mailboxesShow auth domain mailbox
     MailboxesCreate domain mailbox -> mailboxesCreate auth domain mailbox
+    MailboxesDelete domain localPart -> mailboxesDelete auth domain localPart
