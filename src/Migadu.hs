@@ -14,6 +14,7 @@ import Network.HTTP.Req qualified as Req
 import System.Environment qualified as Env
 import Prelude hiding (Read)
 import Mailbox (Mailbox, Mailboxes)
+import Identity (Identities)
 
 baseEndpoint :: Req.Url 'Req.Https
 baseEndpoint = Req.https "api.migadu.com" /: "v1"
@@ -35,6 +36,7 @@ data MigaduRequest a where
   -- MailboxesShow :: Text -> Text -> MigaduRequest Aeson.Value
   MailboxesCreate :: Text -> Mailbox Create -> MigaduRequest (Mailbox Read)
   MailboxesDelete :: Text -> Text -> MigaduRequest (Mailbox Read)
+  IdentitiesIndex :: Text -> Text -> MigaduRequest (Identities Read)
 
 mkAuthOpts :: MigaduAuth -> Req.Option 'Req.Https
 mkAuthOpts (MigaduAuth account key) = Req.basicAuth account key
@@ -80,6 +82,16 @@ mailboxesDelete auth domain localPart =
       Req.jsonResponse
       (mkAuthOpts auth)
 
+identitiesIndex :: MigaduAuth -> Text -> Text -> Req.Req (Identities Read)
+identitiesIndex auth domain localPart =
+  Req.responseBody
+    <$> Req.req
+      Req.GET
+      (baseEndpoint /: "domains" /: domain /: "mailboxes" /: localPart /: "identities")
+      Req.NoReqBody
+      Req.jsonResponse
+      (mkAuthOpts auth)
+
 runMigadu :: MigaduAuth -> MigaduRequest a -> IO a
 runMigadu auth =
   Req.runReq Req.defaultHttpConfig . \case
@@ -87,3 +99,4 @@ runMigadu auth =
     MailboxesShow domain mailbox -> mailboxesShow auth domain mailbox
     MailboxesCreate domain mailbox -> mailboxesCreate auth domain mailbox
     MailboxesDelete domain localPart -> mailboxesDelete auth domain localPart
+    IdentitiesIndex domain localPart -> identitiesIndex auth domain localPart

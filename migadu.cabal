@@ -39,6 +39,7 @@ library
 
   exposed-modules:
     Fields
+    Identity
     Mailbox
     Migadu
 
