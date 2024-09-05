@@ -1,5 +1,5 @@
 {
-  description = "migadu-hs";
+  description = "migaman";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -21,13 +21,13 @@
       }: let
         pkgs = inputs.nixpkgs.legacyPackages.${system};
         myOverlay = pkgs.haskell.lib.compose.packageSourceOverrides {
-          migadu = ./.;
+          migaman = ./.;
         };
         hsPkgs = pkgs.haskell.packages.ghc982.extend myOverlay;
 
       in {
         devShells.default = hsPkgs.shellFor {
-          packages = p: [p.migadu];
+          packages = p: [p.migaman];
           nativeBuildInputs = [
             hsPkgs.cabal-install
             hsPkgs.haskell-language-server
@@ -36,7 +36,7 @@
           ];
         };
 
-        packages.default = hsPkgs.migadu;
+        packages.default = hsPkgs.migaman;
 
         formatter = pkgs.alejandra;
       };

@@ -1,4 +1,4 @@
-# Revision history for migaman
+# Revision history for migadu
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
