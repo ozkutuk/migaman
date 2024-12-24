@@ -22,12 +22,13 @@
         pkgs = inputs.nixpkgs.legacyPackages.${system};
         myOverlay = pkgs.haskell.lib.compose.packageSourceOverrides {
           migaman = ./.;
+          migadu = ./migadu;
         };
         hsPkgs = pkgs.haskell.packages.ghc982.extend myOverlay;
 
       in {
         devShells.default = hsPkgs.shellFor {
-          packages = p: [p.migaman];
+          packages = p: [p.migaman p.migadu];
           nativeBuildInputs = [
             hsPkgs.cabal-install
             hsPkgs.haskell-language-server
