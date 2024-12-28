@@ -34,6 +34,8 @@
             hsPkgs.haskell-language-server
             hsPkgs.fourmolu
             hsPkgs.cabal-fmt
+
+            pkgs.just
           ];
         };
 
