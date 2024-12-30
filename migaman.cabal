@@ -38,7 +38,13 @@ library
     , common-extensions
 
   exposed-modules:  MyLib
-  build-depends:    base ^>=4.19.1.0
+  build-depends:
+    , base         ^>=4.19.1.0
+    , beam-core
+    , beam-sqlite
+    , sqlite-simple
+    , text
+
   hs-source-dirs:   src
   default-language: GHC2021
 

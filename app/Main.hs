@@ -1,9 +1,7 @@
 module Main where
 
-import qualified MyLib (someFunc)
-import qualified Migadu
+import qualified MyLib
+-- import qualified Migadu
 
 main :: IO ()
-main = do
-  putStrLn "Hello, Haskell!"
-  MyLib.someFunc
+main = MyLib.main

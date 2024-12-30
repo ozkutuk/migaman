@@ -8,3 +8,6 @@ repl:
 alias b := build
 build:
     cabal build
+
+init-db:
+    dbmate up

@@ -36,6 +36,7 @@
             hsPkgs.cabal-fmt
 
             pkgs.just
+            pkgs.sqlite
           ];
         };
 
