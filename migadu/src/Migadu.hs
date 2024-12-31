@@ -4,10 +4,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Migadu
-  ( module Migadu
-  , module Migadu.Fields
+  ( module Migadu.Fields
   , module Migadu.Identity
   , module Migadu.Mailbox
+  , MigaduAuth
+  , getAuth
+  , MigaduRequest (..)
+  , runMigadu
   ) where
 
 import Data.ByteString (ByteString)
@@ -43,6 +46,7 @@ data MigaduRequest a where
   MailboxesCreate :: Text -> Mailbox Create -> MigaduRequest (Mailbox Read)
   MailboxesDelete :: Text -> Text -> MigaduRequest (Mailbox Read)
   IdentitiesIndex :: Text -> Text -> MigaduRequest (Identities Read)
+  IdentitiesCreate :: Text -> Text -> Identity Create -> MigaduRequest (Identity Read)
 
 mkAuthOpts :: MigaduAuth -> Req.Option 'Req.Https
 mkAuthOpts (MigaduAuth account key) = Req.basicAuth account key
@@ -98,6 +102,16 @@ identitiesIndex auth domain localPart =
       Req.jsonResponse
       (mkAuthOpts auth)
 
+identitiesCreate :: MigaduAuth -> Text -> Text -> Identity Create -> Req.Req (Identity Read)
+identitiesCreate auth domain aliasTo identity =
+  Req.responseBody
+    <$> Req.req
+      Req.POST
+      (baseEndpoint /: "domains" /: domain /: "mailboxes" /: aliasTo /: "identities")
+      (Req.ReqBodyJson identity)
+      Req.jsonResponse
+      (mkAuthOpts auth)
+
 runMigadu :: MigaduAuth -> MigaduRequest a -> IO a
 runMigadu auth =
   Req.runReq Req.defaultHttpConfig . \case
@@ -106,3 +120,4 @@ runMigadu auth =
     MailboxesCreate domain mailbox -> mailboxesCreate auth domain mailbox
     MailboxesDelete domain localPart -> mailboxesDelete auth domain localPart
     IdentitiesIndex domain localPart -> identitiesIndex auth domain localPart
+    IdentitiesCreate domain aliasTo identity -> identitiesCreate auth domain aliasTo identity

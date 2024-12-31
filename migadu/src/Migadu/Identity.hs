@@ -99,6 +99,22 @@ instance ToJSON (Identity Create) where
 --             <> "password" .= password
 --
 
+defaultCreateIdentity :: Text -> Text -> Identity Create
+defaultCreateIdentity name localPart = Identity
+  { localPart
+  , name
+  , domainName = ()
+  , address = ()
+  , maySend = True
+  , mayReceive = True
+  , mayAccessImap = True
+  , mayAccessPop3 = True
+  , mayAccessManagesieve = True
+  , footerActive = Nothing
+  , footerPlainBody = Nothing
+  , footerHtmlBody = Nothing
+  }
+
 aesonOptions :: Aeson.Options
 aesonOptions =
   Aeson.defaultOptions
