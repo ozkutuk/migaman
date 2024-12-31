@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Identity where
+module Migadu.Identity where
 
 import Data.Aeson (FromJSON, ToJSON, (.:), (.:?), (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Text (Text)
-import Fields (Address, All, DomainName, LocalPart, MailboxType (..))
+import Migadu.Fields (Address, All, DomainName, LocalPart, MailboxType (..))
 import GHC.Generics (Generic)
 import Prelude hiding (Read)
 

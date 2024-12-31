@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Mailbox where
+module Migadu.Mailbox where
 
 import Data.Aeson (FromJSON, ToJSON, (.:), (.:?), (.=))
 import Data.Aeson qualified as Aeson
@@ -9,7 +9,7 @@ import Data.Aeson.Types qualified as Aeson
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time (UTCTime)
-import Fields (Address, All, DomainName, LocalPart, MailboxType (..), PasswordMethod (..), SpamAction (..), SpamAggressiveness (..))
+import Migadu.Fields (Address, All, DomainName, LocalPart, MailboxType (..), PasswordMethod (..), SpamAction (..), SpamAggressiveness (..))
 import GHC.Generics (Generic)
 import Prelude hiding (Read)
 

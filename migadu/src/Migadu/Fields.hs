@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Fields where
+module Migadu.Fields where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Aeson qualified as Aeson

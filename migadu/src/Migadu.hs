@@ -3,18 +3,24 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Migadu where
+module Migadu
+  ( module Migadu
+  , module Migadu.Fields
+  , module Migadu.Identity
+  , module Migadu.Mailbox
+  ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BSC
 import Data.Text (Text)
-import Fields (MailboxType (..))
 import Network.HTTP.Req ((/:))
 import Network.HTTP.Req qualified as Req
 import System.Environment qualified as Env
 import Prelude hiding (Read)
-import Mailbox (Mailbox, Mailboxes)
-import Identity (Identities)
+
+import Migadu.Fields (MailboxType (..))
+import Migadu.Identity (Identities (..), Identity (..))
+import Migadu.Mailbox (Mailbox, Mailboxes)
 
 baseEndpoint :: Req.Url 'Req.Https
 baseEndpoint = Req.https "api.migadu.com" /: "v1"

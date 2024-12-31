@@ -38,10 +38,10 @@ library
     , common-extensions
 
   exposed-modules:
-    Fields
-    Identity
-    Mailbox
     Migadu
+    Migadu.Fields
+    Migadu.Identity
+    Migadu.Mailbox
 
   -- other-modules:
   -- other-extensions:
