@@ -27,6 +27,7 @@ import GHC.Generics (Generic)
 import Data.Text qualified as T
 import Migadu ()
 import Migadu qualified
+import Options.Applicative qualified as Opt
 import System.Exit (die)
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
@@ -87,7 +88,7 @@ importIdentities' = Beam.insert migamanDb.identity . Beam.insertData . toIdentit
 importIdentities :: Sqlite.Connection -> IO ()
 importIdentities conn = do
   identities <- migaduIdentities
-  Beam.runBeamSqliteDebug putStrLn conn $ do
+  Beam.runBeamSqlite conn $ do
     Beam.runInsert $ importIdentities' identities
 
 -- I will almost certainly replace this with a prettyprinter solution,
@@ -111,11 +112,37 @@ formatAliases = Tabular.render T.unpack T.unpack T.unpack . tabulateAliases
 listAliases :: Sqlite.Connection -> IO ()
 listAliases conn = do
   let allAliases = Beam.all_ migamanDb.identity
-  aliases <- Beam.runBeamSqliteDebug putStrLn conn $ do
+  aliases <- Beam.runBeamSqlite conn $ do
     Beam.runSelectReturningList $ Beam.select allAliases
   putStrLn $ formatAliases aliases
 
+parser :: Opt.Parser Command
+parser =
+  Opt.hsubparser $
+    Opt.command
+      "list"
+      ( Opt.info
+          (pure ListAliases)
+          (Opt.progDesc "List aliases")
+      )
+      <> Opt.command
+        "import"
+        ( Opt.info
+            (pure ImportIdentities)
+            (Opt.progDesc "Import identities from Migadu as aliases")
+        )
+
+data Command
+  = ListAliases
+  | ImportIdentities
+
 main :: IO ()
 main = do
+  command <- Opt.execParser opts
   conn <- Sqlite.open "database.sqlite3"
-  listAliases conn
+  case command of
+    ListAliases -> listAliases conn
+    ImportIdentities -> importIdentities conn
+  where
+    opts :: Opt.ParserInfo Command
+    opts = Opt.info (parser Opt.<**> Opt.helper) Opt.fullDesc

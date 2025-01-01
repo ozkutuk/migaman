@@ -46,6 +46,7 @@ library
     , text
     , migadu
     , tabular
+    , optparse-applicative
 
   hs-source-dirs:   src
   default-language: GHC2021
