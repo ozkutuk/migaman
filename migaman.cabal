@@ -45,6 +45,7 @@ library
     , sqlite-simple
     , text
     , migadu
+    , tabular
 
   hs-source-dirs:   src
   default-language: GHC2021

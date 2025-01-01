@@ -24,9 +24,12 @@ import Data.Int (Int64)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
+import Data.Text qualified as T
 import Migadu ()
 import Migadu qualified
 import System.Exit (die)
+import Text.Tabular qualified as Tabular
+import Text.Tabular.AsciiArt qualified as Tabular
 
 data IdentityTable f = Identity'
   { id :: Columnar f Int64
@@ -81,13 +84,38 @@ toIdentityTableAll (Migadu.Identities ids) = map toIdentityTable ids
 importIdentities' :: Migadu.Identities Migadu.Read -> Beam.SqlInsert Beam.Sqlite IdentityTable
 importIdentities' = Beam.insert migamanDb.identity . Beam.insertData . toIdentityTableAll
 
-importIdentities :: IO ()
-importIdentities = do
+importIdentities :: Sqlite.Connection -> IO ()
+importIdentities conn = do
   identities <- migaduIdentities
-  conn <- Sqlite.open "database.sqlite3"
   Beam.runBeamSqliteDebug putStrLn conn $ do
     Beam.runInsert $ importIdentities' identities
 
+-- I will almost certainly replace this with a prettyprinter solution,
+-- but this is alright for the time being
+tabulateAliases :: [Identity'] -> Tabular.Table Text Text Text
+tabulateAliases identities =
+  Tabular.Table
+    (Tabular.Group Tabular.SingleLine (g identities))
+    (Tabular.Group Tabular.SingleLine [Tabular.Header "email"])
+    (map f identities)
+  where
+    f :: Identity' -> [Text]
+    f identity = [identity.account, identity.localpart]
+
+    g :: [Identity'] -> [Tabular.Header Text]
+    g = map (Tabular.Header . (.account))
+
+formatAliases :: [Identity'] -> String
+formatAliases = Tabular.render T.unpack T.unpack T.unpack . tabulateAliases
+
+listAliases :: Sqlite.Connection -> IO ()
+listAliases conn = do
+  let allAliases = Beam.all_ migamanDb.identity
+  aliases <- Beam.runBeamSqliteDebug putStrLn conn $ do
+    Beam.runSelectReturningList $ Beam.select allAliases
+  putStrLn $ formatAliases aliases
+
 main :: IO ()
 main = do
-  importIdentities
+  conn <- Sqlite.open "database.sqlite3"
+  listAliases conn
