@@ -7,6 +7,10 @@
 
 module MyLib where
 
+import Data.Functor.Identity (Identity)
+import Data.Int (Int64)
+import Data.Text (Text)
+import Data.Text qualified as T
 import Database.Beam
   ( Beamable
   , Columnar
@@ -18,13 +22,7 @@ import Database.Beam
 import Database.Beam qualified as Beam
 import Database.Beam.Sqlite qualified as Beam
 import Database.SQLite.Simple qualified as Sqlite
-
-import Data.Functor.Identity (Identity)
-import Data.Int (Int64)
-import Data.Text (Text)
 import GHC.Generics (Generic)
-
-import Data.Text qualified as T
 import Migadu ()
 import Migadu qualified
 import Options.Applicative qualified as Opt
@@ -36,6 +34,8 @@ data IdentityTable f = Identity'
   { id :: Columnar f Int64
   , account :: Columnar f Text
   , localpart :: Columnar f Text
+  , domain :: Columnar f Text
+  , target :: Columnar f Text
   }
   deriving stock (Generic)
   deriving anyclass (Beamable)
@@ -62,49 +62,53 @@ newtype MigamanDb f = MigamanDb
 migamanDb :: DatabaseSettings be MigamanDb
 migamanDb = Beam.defaultDbSettings
 
-migaduIdentities :: IO (Migadu.Identities Migadu.Read)
-migaduIdentities = do
+migaduIdentities :: ImportOptions -> IO (Migadu.Identities Migadu.Read)
+migaduIdentities options = do
   mAuth <- Migadu.getAuth
   case mAuth of
     Nothing -> die "invalid auth"
     Just auth ->
-      let idAct = Migadu.IdentitiesIndex "example.com" "target"
+      let idAct = Migadu.IdentitiesIndex options.domain options.target
        in Migadu.runMigadu auth idAct
 
-toIdentityTable :: Migadu.Identity Migadu.Read -> IdentityTable (Beam.QExpr Beam.Sqlite s)
-toIdentityTable identity =
+toIdentityTable :: ImportOptions -> Migadu.Identity Migadu.Read -> IdentityTable (Beam.QExpr Beam.Sqlite s)
+toIdentityTable options identity =
   Identity'
     { id = Beam.default_
-    , account = Beam.val_ identity.localPart
+    , account = Beam.val_ ("imported-" <> identity.localPart)
     , localpart = Beam.val_ identity.localPart
+    , domain = Beam.val_ options.domain
+    , target = Beam.val_ options.target
     }
 
-toIdentityTableAll :: Migadu.Identities Migadu.Read -> [IdentityTable (Beam.QExpr Beam.Sqlite s)]
-toIdentityTableAll (Migadu.Identities ids) = map toIdentityTable ids
+toIdentityTableAll :: ImportOptions -> Migadu.Identities Migadu.Read -> [IdentityTable (Beam.QExpr Beam.Sqlite s)]
+toIdentityTableAll options (Migadu.Identities ids) = map (toIdentityTable options) ids
 
-importIdentities' :: Migadu.Identities Migadu.Read -> Beam.SqlInsert Beam.Sqlite IdentityTable
-importIdentities' = Beam.insert migamanDb.identity . Beam.insertData . toIdentityTableAll
+importIdentities' :: ImportOptions -> Migadu.Identities Migadu.Read -> Beam.SqlInsert Beam.Sqlite IdentityTable
+importIdentities' options = Beam.insert migamanDb.identity . Beam.insertData . toIdentityTableAll options
 
-importIdentities :: Sqlite.Connection -> IO ()
-importIdentities conn = do
-  identities <- migaduIdentities
+importIdentities :: ImportOptions -> Sqlite.Connection -> IO ()
+importIdentities options conn = do
+  identities <- migaduIdentities options
   Beam.runBeamSqlite conn $ do
-    Beam.runInsert $ importIdentities' identities
+    Beam.runInsert $ importIdentities' options identities
 
 -- I will almost certainly replace this with a prettyprinter solution,
 -- but this is alright for the time being
 tabulateAliases :: [Identity'] -> Tabular.Table Text Text Text
 tabulateAliases identities =
   Tabular.Table
-    (Tabular.Group Tabular.SingleLine (g identities))
-    (Tabular.Group Tabular.SingleLine [Tabular.Header "email"])
-    (map f identities)
+    (Tabular.Group Tabular.SingleLine (headerAccountNames identities))
+    (Tabular.Group Tabular.SingleLine $ map Tabular.Header ["email", "target"])
+    (map mkRow identities)
   where
-    f :: Identity' -> [Text]
-    f identity = [identity.account, identity.localpart]
+    mkRow :: Identity' -> [Text]
+    mkRow identity =
+      let mkEmail = (<> "@" <> identity.domain)
+       in [mkEmail identity.localpart, mkEmail identity.target]
 
-    g :: [Identity'] -> [Tabular.Header Text]
-    g = map (Tabular.Header . (.account))
+    headerAccountNames :: [Identity'] -> [Tabular.Header Text]
+    headerAccountNames = map (Tabular.Header . (.account))
 
 formatAliases :: [Identity'] -> String
 formatAliases = Tabular.render T.unpack T.unpack T.unpack . tabulateAliases
@@ -128,13 +132,26 @@ parser =
       <> Opt.command
         "import"
         ( Opt.info
-            (pure ImportIdentities)
+            (ImportIdentities <$> importOptions)
             (Opt.progDesc "Import identities from Migadu as aliases")
         )
+  where
+    importOptions :: Opt.Parser ImportOptions
+    importOptions =
+      ImportOptions
+        <$> Opt.strOption
+          (Opt.long "domain" <> Opt.help "Domain of the target mailbox")
+        <*> Opt.strOption
+          (Opt.long "target" <> Opt.help "Local part of the target mailbox")
 
 data Command
   = ListAliases
-  | ImportIdentities
+  | ImportIdentities ImportOptions
+
+data ImportOptions = ImportOptions
+  { domain :: Text
+  , target :: Text
+  }
 
 main :: IO ()
 main = do
@@ -142,7 +159,7 @@ main = do
   conn <- Sqlite.open "database.sqlite3"
   case command of
     ListAliases -> listAliases conn
-    ImportIdentities -> importIdentities conn
+    ImportIdentities options -> importIdentities options conn
   where
     opts :: Opt.ParserInfo Command
     opts = Opt.info (parser Opt.<**> Opt.helper) Opt.fullDesc

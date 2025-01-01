@@ -22,6 +22,7 @@ instance FromJSON (Identities Read) where
   parseJSON :: Aeson.Value -> Aeson.Parser (Identities Read)
   parseJSON = Aeson.genericParseJSON aesonOptions
 
+-- Maybe this should carry the "host mailbox" information as well?
 data Identity (typ :: MailboxType) = Identity
   { localPart :: !(LocalPart typ)
   , domainName :: !(DomainName typ)
