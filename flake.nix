@@ -37,6 +37,8 @@
 
             pkgs.just
             pkgs.sqlite
+            pkgs.sqlitebrowser
+            pkgs.dbmate
           ];
         };
 
