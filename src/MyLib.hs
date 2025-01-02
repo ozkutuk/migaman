@@ -22,6 +22,7 @@ import Database.Beam
   , TableEntity
   )
 import Database.Beam qualified as Beam
+import Database.Beam.Backend.SQL.BeamExtensions qualified as Beam
 import Database.Beam.Sqlite qualified as Beam
 import Database.SQLite.Simple qualified as Sqlite
 import GHC.Generics (Generic)
@@ -104,7 +105,10 @@ toIdentityTableAll :: ImportOptions -> Migadu.Identities Migadu.Read -> [Identit
 toIdentityTableAll options (Migadu.Identities ids) = map (toIdentityTableImported options) ids
 
 importIdentities' :: ImportOptions -> Migadu.Identities Migadu.Read -> Beam.SqlInsert Beam.Sqlite IdentityTable
-importIdentities' options = Beam.insert migamanDb.identity . Beam.insertData . toIdentityTableAll options
+importIdentities' options =
+  (\d -> Beam.insertOnConflict migamanDb.identity d Beam.anyConflict Beam.onConflictDoNothing)
+    . Beam.insertData
+    . toIdentityTableAll options
 
 importIdentities :: ImportOptions -> Sqlite.Connection -> IO ()
 importIdentities options conn = do
