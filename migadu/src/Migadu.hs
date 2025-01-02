@@ -22,7 +22,7 @@ import System.Environment qualified as Env
 import Prelude hiding (Read)
 
 import Migadu.Fields (MailboxType (..))
-import Migadu.Identity (Identities (..), Identity (..))
+import Migadu.Identity (Identities (..), Identity (..), defaultCreateIdentity)
 import Migadu.Mailbox (Mailbox, Mailboxes)
 
 baseEndpoint :: Req.Url 'Req.Https
@@ -42,11 +42,16 @@ getAuth = do
 data MigaduRequest a where
   MailboxesIndex :: Text -> MigaduRequest (Mailboxes Read)
   MailboxesShow :: Text -> Text -> MigaduRequest (Mailbox Read)
-  -- MailboxesShow :: Text -> Text -> MigaduRequest Aeson.Value
   MailboxesCreate :: Text -> Mailbox Create -> MigaduRequest (Mailbox Read)
   MailboxesDelete :: Text -> Text -> MigaduRequest (Mailbox Read)
   IdentitiesIndex :: Text -> Text -> MigaduRequest (Identities Read)
-  IdentitiesCreate :: Text -> Text -> Identity Create -> MigaduRequest (Identity Read)
+  IdentitiesCreate
+    :: Text
+    -- ^ Domain
+    -> Text
+    -- ^ Target local part
+    -> Identity Create
+    -> MigaduRequest (Identity Read)
 
 mkAuthOpts :: MigaduAuth -> Req.Option 'Req.Https
 mkAuthOpts (MigaduAuth account key) = Req.basicAuth account key

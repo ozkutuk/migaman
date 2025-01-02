@@ -7,10 +7,12 @@
 
 module MyLib where
 
+import Control.Monad (replicateM)
 import Data.Functor.Identity (Identity)
 import Data.Int (Int64)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.IO qualified as TIO
 import Database.Beam
   ( Beamable
   , Columnar
@@ -27,6 +29,7 @@ import Migadu ()
 import Migadu qualified
 import Options.Applicative qualified as Opt
 import System.Exit (die)
+import System.Random.Stateful qualified as RandomS
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
 
@@ -62,27 +65,43 @@ newtype MigamanDb f = MigamanDb
 migamanDb :: DatabaseSettings be MigamanDb
 migamanDb = Beam.defaultDbSettings
 
-migaduIdentities :: ImportOptions -> IO (Migadu.Identities Migadu.Read)
-migaduIdentities options = do
+withAuth :: (Migadu.MigaduAuth -> IO a) -> IO a
+withAuth f = do
   mAuth <- Migadu.getAuth
   case mAuth of
     Nothing -> die "invalid auth"
-    Just auth ->
-      let idAct = Migadu.IdentitiesIndex options.domain options.target
-       in Migadu.runMigadu auth idAct
+    Just auth -> f auth
 
-toIdentityTable :: ImportOptions -> Migadu.Identity Migadu.Read -> IdentityTable (Beam.QExpr Beam.Sqlite s)
-toIdentityTable options identity =
+migaduIdentities :: ImportOptions -> IO (Migadu.Identities Migadu.Read)
+migaduIdentities options =
+  let idAct = Migadu.IdentitiesIndex options.domain options.target
+   in withAuth $ flip Migadu.runMigadu idAct
+
+toIdentityTableImported
+  :: ImportOptions -> Migadu.Identity Migadu.Read -> IdentityTable (Beam.QExpr Beam.Sqlite s)
+toIdentityTableImported options identity =
+  toIdentityTable ("imported-" <> identity.localPart) options.domain options.target identity
+
+toIdentityTable
+  :: Text
+  -- ^ Account name
+  -> Text
+  -- ^ Domain
+  -> Text
+  -- ^ Target
+  -> Migadu.Identity Migadu.Read
+  -> IdentityTable (Beam.QExpr Beam.Sqlite s)
+toIdentityTable account domain target identity =
   Identity'
     { id = Beam.default_
-    , account = Beam.val_ ("imported-" <> identity.localPart)
+    , account = Beam.val_ account
     , localpart = Beam.val_ identity.localPart
-    , domain = Beam.val_ options.domain
-    , target = Beam.val_ options.target
+    , domain = Beam.val_ domain
+    , target = Beam.val_ target
     }
 
 toIdentityTableAll :: ImportOptions -> Migadu.Identities Migadu.Read -> [IdentityTable (Beam.QExpr Beam.Sqlite s)]
-toIdentityTableAll options (Migadu.Identities ids) = map (toIdentityTable options) ids
+toIdentityTableAll options (Migadu.Identities ids) = map (toIdentityTableImported options) ids
 
 importIdentities' :: ImportOptions -> Migadu.Identities Migadu.Read -> Beam.SqlInsert Beam.Sqlite IdentityTable
 importIdentities' options = Beam.insert migamanDb.identity . Beam.insertData . toIdentityTableAll options
@@ -120,6 +139,29 @@ listAliases conn = do
     Beam.runSelectReturningList $ Beam.select allAliases
   putStrLn $ formatAliases aliases
 
+randomElement :: RandomS.StatefulGen g m => [a] -> g -> m a
+randomElement xs g = (xs !!) <$> RandomS.uniformRM (0, length xs - 1) g
+
+randomText :: RandomS.StatefulGen g m => Int -> g -> m Text
+randomText len = fmap T.pack . replicateM len . randomElement validChars
+  where
+    validChars = ['a' .. 'z'] <> ['0' .. '9']
+
+generateAlias :: GenerateOptions -> Sqlite.Connection -> IO ()
+generateAlias options conn = do
+  alias <- randomText 10 RandomS.globalStdGen
+  let newIdentity = Migadu.defaultCreateIdentity options.userName alias
+      createIdentity = Migadu.IdentitiesCreate options.domain options.target newIdentity
+  createdIdentity <- withAuth $ flip Migadu.runMigadu createIdentity
+  Beam.runBeamSqlite conn
+    $ Beam.runInsert
+      . Beam.insert migamanDb.identity
+      . Beam.insertData
+      . (: [])
+      . toIdentityTable options.accountName options.domain options.target
+    $ createdIdentity
+  TIO.putStrLn createdIdentity.address
+
 parser :: Opt.Parser Command
 parser =
   Opt.hsubparser $
@@ -135,6 +177,12 @@ parser =
             (ImportIdentities <$> importOptions)
             (Opt.progDesc "Import identities from Migadu as aliases")
         )
+      <> Opt.command
+        "generate"
+        ( Opt.info
+            (GenerateAlias <$> generateOptions)
+            (Opt.progDesc "Generate a new alias")
+        )
   where
     importOptions :: Opt.Parser ImportOptions
     importOptions =
@@ -144,13 +192,33 @@ parser =
         <*> Opt.strOption
           (Opt.long "target" <> Opt.help "Local part of the target mailbox")
 
+    generateOptions :: Opt.Parser GenerateOptions
+    generateOptions =
+      GenerateOptions
+        <$> Opt.strOption
+          (Opt.long "domain" <> Opt.metavar "DOMAIN" <> Opt.help "Domain of the target mailbox")
+        <*> Opt.strOption
+          (Opt.long "target" <> Opt.metavar "TARGET" <> Opt.help "Local part of the target mailbox")
+        <*> Opt.strOption
+          (Opt.long "name" <> Opt.metavar "NAME" <> Opt.help "User name of the generated identity")
+        <*> Opt.strArgument
+          (Opt.metavar "ACCOUNT")
+
 data Command
   = ListAliases
   | ImportIdentities ImportOptions
+  | GenerateAlias GenerateOptions
 
 data ImportOptions = ImportOptions
   { domain :: Text
   , target :: Text
+  }
+
+data GenerateOptions = GenerateOptions
+  { domain :: Text
+  , target :: Text
+  , userName :: Text
+  , accountName :: Text
   }
 
 main :: IO ()
@@ -160,6 +228,7 @@ main = do
   case command of
     ListAliases -> listAliases conn
     ImportIdentities options -> importIdentities options conn
+    GenerateAlias options -> generateAlias options conn
   where
     opts :: Opt.ParserInfo Command
     opts = Opt.info (parser Opt.<**> Opt.helper) Opt.fullDesc
