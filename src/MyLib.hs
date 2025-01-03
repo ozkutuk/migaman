@@ -166,8 +166,8 @@ generateAlias options conn = do
     $ createdIdentity
   TIO.putStrLn createdIdentity.address
 
-parser :: Opt.Parser Command
-parser =
+command :: Opt.Parser Command
+command =
   Opt.hsubparser $
     Opt.command
       "list"
@@ -208,10 +208,23 @@ parser =
         <*> Opt.strArgument
           (Opt.metavar "ACCOUNT")
 
+globalOptions :: Opt.Parser GlobalOptions
+globalOptions =
+  GlobalOptions
+    <$> Opt.strOption
+      ( Opt.long "database"
+          <> Opt.metavar "FILE"
+          <> Opt.help "Path of the SQLite database"
+      )
+
 data Command
   = ListAliases
   | ImportIdentities ImportOptions
   | GenerateAlias GenerateOptions
+
+data GlobalOptions = GlobalOptions
+  { dbPath :: FilePath
+  }
 
 data ImportOptions = ImportOptions
   { domain :: Text
@@ -225,14 +238,17 @@ data GenerateOptions = GenerateOptions
   , accountName :: Text
   }
 
+parser :: Opt.Parser (GlobalOptions, Command)
+parser = (,) <$> globalOptions <*> command
+
 main :: IO ()
 main = do
-  command <- Opt.execParser opts
-  conn <- Sqlite.open "database.sqlite3"
-  case command of
+  (globals, cmd) <- Opt.execParser opts
+  conn <- Sqlite.open globals.dbPath
+  case cmd of
     ListAliases -> listAliases conn
     ImportIdentities options -> importIdentities options conn
     GenerateAlias options -> generateAlias options conn
   where
-    opts :: Opt.ParserInfo Command
+    opts :: Opt.ParserInfo (GlobalOptions, Command)
     opts = Opt.info (parser Opt.<**> Opt.helper) Opt.fullDesc
