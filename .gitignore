@@ -26,3 +26,4 @@ cabal.project.local~
 .direnv/
 .env
 *.sqlite3
+migaman.toml

@@ -10,8 +10,10 @@ module MyLib where
 import Control.Monad (replicateM)
 import Data.Functor.Identity (Identity)
 import Data.Int (Int64)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as T
 import Data.Text.IO qualified as TIO
 import Database.Beam
   ( Beamable
@@ -31,6 +33,7 @@ import Migadu qualified
 import Options.Applicative qualified as Opt
 import System.Exit (die)
 import System.Random.Stateful qualified as RandomS
+import TOML qualified as Toml
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
 
@@ -66,17 +69,10 @@ newtype MigamanDb f = MigamanDb
 migamanDb :: DatabaseSettings be MigamanDb
 migamanDb = Beam.defaultDbSettings
 
-withAuth :: (Migadu.MigaduAuth -> IO a) -> IO a
-withAuth f = do
-  mAuth <- Migadu.getAuth
-  case mAuth of
-    Nothing -> die "invalid auth"
-    Just auth -> f auth
-
-migaduIdentities :: ImportOptions -> IO (Migadu.Identities Migadu.Read)
-migaduIdentities options =
+migaduIdentities :: ImportOptions -> Migadu.MigaduAuth -> IO (Migadu.Identities Migadu.Read)
+migaduIdentities options auth =
   let idAct = Migadu.IdentitiesIndex options.domain options.target
-   in withAuth $ flip Migadu.runMigadu idAct
+   in Migadu.runMigadu auth idAct
 
 toIdentityTableImported
   :: ImportOptions -> Migadu.Identity Migadu.Read -> IdentityTable (Beam.QExpr Beam.Sqlite s)
@@ -110,9 +106,9 @@ importIdentities' options =
     . Beam.insertData
     . toIdentityTableAll options
 
-importIdentities :: ImportOptions -> Sqlite.Connection -> IO ()
-importIdentities options conn = do
-  identities <- migaduIdentities options
+importIdentities :: ImportOptions -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+importIdentities options auth conn = do
+  identities <- migaduIdentities options auth
   Beam.runBeamSqlite conn $ do
     Beam.runInsert $ importIdentities' options identities
 
@@ -151,12 +147,12 @@ randomText len = fmap T.pack . replicateM len . randomElement validChars
   where
     validChars = ['a' .. 'z'] <> ['0' .. '9']
 
-generateAlias :: GenerateOptions -> Sqlite.Connection -> IO ()
-generateAlias options conn = do
+generateAlias :: GenerateOptions -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+generateAlias options auth conn = do
   alias <- randomText 10 RandomS.globalStdGen
   let newIdentity = Migadu.defaultCreateIdentity options.userName alias
       createIdentity = Migadu.IdentitiesCreate options.domain options.target newIdentity
-  createdIdentity <- withAuth $ flip Migadu.runMigadu createIdentity
+  createdIdentity <- Migadu.runMigadu auth createIdentity
   Beam.runBeamSqlite conn
     $ Beam.runInsert
       . Beam.insert migamanDb.identity
@@ -210,8 +206,8 @@ command =
 
 globalOptions :: Opt.Parser GlobalOptions
 globalOptions =
-  GlobalOptions
-    <$> Opt.strOption
+  fmap GlobalOptions . Opt.optional $
+    Opt.strOption
       ( Opt.long "database"
           <> Opt.metavar "FILE"
           <> Opt.help "Path of the SQLite database"
@@ -223,7 +219,7 @@ data Command
   | GenerateAlias GenerateOptions
 
 data GlobalOptions = GlobalOptions
-  { dbPath :: FilePath
+  { dbPath :: Maybe FilePath
   }
 
 data ImportOptions = ImportOptions
@@ -238,17 +234,61 @@ data GenerateOptions = GenerateOptions
   , accountName :: Text
   }
 
+data Config = Config
+  { auth :: Migadu.MigaduAuth
+  , dbPath :: FilePath
+  }
+
+data Env = Env
+  { dbPath :: FilePath
+  , auth :: Migadu.MigaduAuth
+  , command :: Command
+  }
+
+configDecoder :: Toml.Decoder Config
+configDecoder =
+  Config
+    <$> Toml.getFieldsWith authDecoder ["migadu", "auth"]
+    <*> Toml.getFields ["migaman", "database"]
+  where
+    authDecoder :: Toml.Decoder Migadu.MigaduAuth
+    authDecoder =
+      let account = T.encodeUtf8 <$> Toml.getField "account"
+          key = T.encodeUtf8 <$> Toml.getField "key"
+       in Migadu.mkAuth <$> account <*> key
+
 parser :: Opt.Parser (GlobalOptions, Command)
 parser = (,) <$> globalOptions <*> command
+
+merge :: GlobalOptions -> Command -> Config -> Env
+merge globals cmd config = Env dbPath auth cmd'
+  where
+    auth :: Migadu.MigaduAuth
+    auth = config.auth
+
+    dbPath :: FilePath
+    dbPath = fromMaybe config.dbPath globals.dbPath
+
+    cmd' :: Command
+    cmd' = cmd
 
 main :: IO ()
 main = do
   (globals, cmd) <- Opt.execParser opts
-  conn <- Sqlite.open globals.dbPath
-  case cmd of
+  config <- decodeFileOrDie configDecoder "migaman.toml"
+  let env = merge globals cmd config
+  conn <- Sqlite.open env.dbPath
+  case env.command of
     ListAliases -> listAliases conn
-    ImportIdentities options -> importIdentities options conn
-    GenerateAlias options -> generateAlias options conn
+    ImportIdentities options -> importIdentities options env.auth conn
+    GenerateAlias options -> generateAlias options env.auth conn
   where
     opts :: Opt.ParserInfo (GlobalOptions, Command)
     opts = Opt.info (parser Opt.<**> Opt.helper) Opt.fullDesc
+
+    decodeFileOrDie :: Toml.Decoder a -> FilePath -> IO a
+    decodeFileOrDie d path = do
+      file <- TIO.readFile path
+      case Toml.decodeWith d file of
+        Left e -> die $ T.unpack (Toml.renderTOMLError e)
+        Right x -> pure x

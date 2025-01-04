@@ -8,6 +8,7 @@ module Migadu
   , module Migadu.Identity
   , module Migadu.Mailbox
   , MigaduAuth
+  , mkAuth
   , getAuth
   , MigaduRequest (..)
   , runMigadu
@@ -32,6 +33,9 @@ data MigaduAuth = MigaduAuth
   { account :: ByteString
   , key :: ByteString
   }
+
+mkAuth :: ByteString -> ByteString -> MigaduAuth
+mkAuth = MigaduAuth
 
 getAuth :: IO (Maybe MigaduAuth)
 getAuth = do
