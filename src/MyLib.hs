@@ -36,6 +36,7 @@ import System.Random.Stateful qualified as RandomS
 import TOML qualified as Toml
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
+import qualified System.Directory as Dir
 
 data IdentityTable f = Identity'
   { id :: Columnar f Int64
@@ -275,7 +276,8 @@ merge globals cmd config = Env dbPath auth cmd'
 main :: IO ()
 main = do
   (globals, cmd) <- Opt.execParser opts
-  config <- decodeFileOrDie configDecoder "migaman.toml"
+  configPath <- Dir.getXdgDirectory Dir.XdgConfig "migaman.toml"
+  config <- decodeFileOrDie configDecoder configPath
   let env = merge globals cmd config
   conn <- Sqlite.open env.dbPath
   case env.command of
