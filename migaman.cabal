@@ -42,7 +42,9 @@ library
     , base                  ^>=4.19.1.0
     , beam-core
     , beam-sqlite
+    , bytestring
     , directory
+    , file-embed
     , migadu
     , optparse-applicative
     , random

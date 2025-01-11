@@ -2,12 +2,16 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
 module MyLib where
 
 import Control.Monad (replicateM)
+import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.FileEmbed qualified as Embed
 import Data.Functor.Identity (Identity)
 import Data.Int (Int64)
 import Data.Maybe (fromMaybe)
@@ -31,12 +35,12 @@ import GHC.Generics (Generic)
 import Migadu ()
 import Migadu qualified
 import Options.Applicative qualified as Opt
+import System.Directory qualified as Dir
 import System.Exit (die)
 import System.Random.Stateful qualified as RandomS
 import TOML qualified as Toml
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
-import qualified System.Directory as Dir
 
 data IdentityTable f = Identity'
   { id :: Columnar f Int64
@@ -273,10 +277,27 @@ merge globals cmd config = Env dbPath auth cmd'
     cmd' :: Command
     cmd' = cmd
 
+ensureConfigFile :: IO FilePath
+ensureConfigFile = do
+  configPath <- Dir.getXdgDirectory Dir.XdgConfig "migaman.toml"
+  configExists <- Dir.doesFileExist configPath
+  if configExists
+    then pure configPath
+    else do
+      BS.writeFile configPath configContents
+      die $
+        unlines
+          [ "Configuration file written to: " <> configPath
+          , "Please fill the required fields in the configuration file and run again."
+          ]
+  where
+    configContents :: ByteString
+    configContents = $(Embed.embedFileRelative "migaman.toml.sample")
+
 main :: IO ()
 main = do
   (globals, cmd) <- Opt.execParser opts
-  configPath <- Dir.getXdgDirectory Dir.XdgConfig "migaman.toml"
+  configPath <- ensureConfigFile
   config <- decodeFileOrDie configDecoder configPath
   let env = merge globals cmd config
   conn <- Sqlite.open env.dbPath
@@ -292,5 +313,12 @@ main = do
     decodeFileOrDie d path = do
       file <- TIO.readFile path
       case Toml.decodeWith d file of
-        Left e -> die $ T.unpack (Toml.renderTOMLError e)
+        Left e -> die $ case e of
+          Toml.ParseError _ ->
+            unlines
+              [ T.unpack (Toml.renderTOMLError e)
+              , ""
+              , "Make sure that you have filled in the configuration file properly and try again."
+              ]
+          _ -> T.unpack (Toml.renderTOMLError e)
         Right x -> pure x

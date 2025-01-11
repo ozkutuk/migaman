@@ -1,7 +1,6 @@
-# Sample Migaman configuration file
+# Migaman configuration file
 
-# Copy this file to the Migaman directory as 'migaman.toml',
-# and fill in the fields.
+# Fill in the fields below accordingly.
 
 # - 'account' is the administrative email address you use to login to
 #   your Migadu account.
