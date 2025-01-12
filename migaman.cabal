@@ -19,9 +19,11 @@ extra-doc-files: CHANGELOG.md
 common common-extensions
   default-extensions:
     DataKinds
+    DeriveAnyClass
     DerivingStrategies
     DuplicateRecordFields
     LambdaCase
+    NoFieldSelectors
     OverloadedRecordDot
 
   default-language:   GHC2021
@@ -37,7 +39,10 @@ library
     warnings
     , common-extensions
 
-  exposed-modules:  MyLib
+  exposed-modules:
+    Cli
+    MyLib
+
   build-depends:
     , base                  ^>=4.19.1.0
     , beam-core
