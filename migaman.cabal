@@ -40,6 +40,8 @@ library
 
   exposed-modules:
     Cli
+    IdentityTable.Model
+    IdentityTable.Query
     MyLib
 
   build-depends:
@@ -65,7 +67,6 @@ executable migaman
   main-is:          Main.hs
   build-depends:
     , base     ^>=4.19.1.0
-    , migadu
     , migaman
 
   hs-source-dirs:   app
