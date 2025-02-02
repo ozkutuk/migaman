@@ -4,7 +4,7 @@
 
 module MyLib where
 
-import Cli (Command (..), GenerateOptions, GlobalOptions, ImportOptions)
+import Cli (Command (..), GlobalOptions)
 import Cli qualified
 import Control.Monad (replicateM, (<=<))
 import Data.ByteString (ByteString)
@@ -25,7 +25,7 @@ import TOML qualified as Toml
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
 
-importIdentities :: ImportOptions -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+importIdentities :: Cli.ImportEnv -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
 importIdentities options auth conn = do
   identities <- migaduIdentities
   let namedIds = generateImportNames identities
@@ -65,7 +65,7 @@ listAliases = (putStrLn . formatAliases) <=< Query.getIdentities
     formatAliases :: [Identity'] -> String
     formatAliases = Tabular.render T.unpack T.unpack T.unpack . tabulateAliases
 
-generateAlias :: GenerateOptions -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+generateAlias :: Cli.GenerateEnv -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
 generateAlias options auth conn = do
   alias <- randomText 10 RandomS.globalStdGen
   let newIdentity = Migadu.defaultCreateIdentity options.userName alias
@@ -104,14 +104,14 @@ main = do
   (globals, cmd) <- Opt.execParser opts
   configPath <- ensureConfigFile
   config <- decodeFileOrDie Cli.configDecoder configPath
-  let env = Cli.merge globals cmd config
+  env <- Cli.merge globals cmd config
   conn <- Sqlite.open env.dbPath
   case env.command of
     ListAliases -> listAliases conn
     ImportIdentities options -> importIdentities options env.auth conn
     GenerateAlias options -> generateAlias options env.auth conn
   where
-    opts :: Opt.ParserInfo (GlobalOptions, Command)
+    opts :: Opt.ParserInfo (GlobalOptions, Command Cli.OptionPhase)
     opts = Opt.info (Cli.parser Opt.<**> Opt.helper) Opt.fullDesc
 
     decodeFileOrDie :: Toml.Decoder a -> FilePath -> IO a
