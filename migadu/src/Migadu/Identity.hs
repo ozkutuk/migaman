@@ -7,16 +7,16 @@ import Data.Aeson (FromJSON, ToJSON, (.:), (.:?), (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Text (Text)
-import Migadu.Fields (Address, All, DomainName, LocalPart, MailboxType (..))
 import GHC.Generics (Generic)
+import Migadu.Fields (Address, All, AllUpdateable, DomainName, LocalPart, MailboxType (..), Updateable)
 import Prelude hiding (Read)
 
 newtype Identities (typ :: MailboxType) = Identities {identities :: [Identity typ]}
   deriving stock (Generic)
 
-deriving stock instance All Eq typ => Eq (Identities typ)
-deriving stock instance All Ord typ => Ord (Identities typ)
-deriving stock instance All Show typ => Show (Identities typ)
+deriving stock instance (All Eq typ, AllUpdateable Eq typ '[Text, Bool]) => Eq (Identities typ)
+deriving stock instance (All Ord typ, AllUpdateable Ord typ '[Text, Bool]) => Ord (Identities typ)
+deriving stock instance (All Show typ, AllUpdateable Show typ '[Text, Bool]) => Show (Identities typ)
 
 instance FromJSON (Identities Read) where
   parseJSON :: Aeson.Value -> Aeson.Parser (Identities Read)
@@ -27,12 +27,12 @@ data Identity (typ :: MailboxType) = Identity
   { localPart :: !(LocalPart typ)
   , domainName :: !(DomainName typ)
   , address :: !(Address typ)
-  , name :: Text
-  , maySend :: Bool
-  , mayReceive :: Bool
-  , mayAccessImap :: Bool
-  , mayAccessPop3 :: Bool
-  , mayAccessManagesieve :: Bool
+  , name :: !(Updateable typ Text)
+  , maySend :: !(Updateable typ Bool)
+  , mayReceive :: !(Updateable typ Bool)
+  , mayAccessImap :: !(Updateable typ Bool)
+  , mayAccessPop3 :: !(Updateable typ Bool)
+  , mayAccessManagesieve :: !(Updateable typ Bool)
   , -- , password :: !(PasswordMethod typ)
     footerActive :: Maybe Text
   , footerPlainBody :: Maybe Text
@@ -40,9 +40,9 @@ data Identity (typ :: MailboxType) = Identity
   }
   deriving stock (Generic)
 
-deriving stock instance All Eq typ => Eq (Identity typ)
-deriving stock instance All Ord typ => Ord (Identity typ)
-deriving stock instance All Show typ => Show (Identity typ)
+deriving stock instance (All Eq typ, AllUpdateable Eq typ '[Text, Bool]) => Eq (Identity typ)
+deriving stock instance (All Ord typ, AllUpdateable Ord typ '[Text, Bool]) => Ord (Identity typ)
+deriving stock instance (All Show typ, AllUpdateable Show typ '[Text, Bool]) => Show (Identity typ)
 
 instance FromJSON (Identity Read) where
   parseJSON :: Aeson.Value -> Aeson.Parser (Identity Read)
@@ -101,20 +101,55 @@ instance ToJSON (Identity Create) where
 --
 
 defaultCreateIdentity :: Text -> Text -> Identity Create
-defaultCreateIdentity name localPart = Identity
-  { localPart
-  , name
-  , domainName = ()
-  , address = ()
-  , maySend = True
-  , mayReceive = True
-  , mayAccessImap = True
-  , mayAccessPop3 = True
-  , mayAccessManagesieve = True
-  , footerActive = Nothing
-  , footerPlainBody = Nothing
-  , footerHtmlBody = Nothing
-  }
+defaultCreateIdentity name localPart =
+  Identity
+    { localPart
+    , name
+    , domainName = ()
+    , address = ()
+    , maySend = True
+    , mayReceive = True
+    , mayAccessImap = True
+    , mayAccessPop3 = True
+    , mayAccessManagesieve = True
+    , footerActive = Nothing
+    , footerPlainBody = Nothing
+    , footerHtmlBody = Nothing
+    }
+
+instance ToJSON (Identity Update) where
+  toJSON :: Identity Update -> Aeson.Value
+  toJSON identity =
+    Aeson.Object $
+      maybeField "name" identity.name
+        <> maybeField "may_send" identity.maySend
+        <> maybeField "may_receive" identity.mayReceive
+        <> maybeField "may_access_imap" identity.mayAccessImap
+        <> maybeField "may_access_pop3" identity.mayAccessPop3
+        <> maybeField "may_access_managesieve" identity.mayAccessManagesieve
+        <> maybeField "footer_active" identity.footerActive
+        <> maybeField "footer_plain_body" identity.footerPlainBody
+        <> maybeField "footer_html_body" identity.footerHtmlBody
+
+maybeField :: Aeson.ToJSON a => Aeson.Key -> Maybe a -> Aeson.Object
+maybeField k = maybe mempty (k .=)
+
+defaultUpdateIdentity :: Identity Update
+defaultUpdateIdentity =
+  Identity
+    { localPart = ()
+    , domainName = ()
+    , address = ()
+    , name = Nothing
+    , maySend = Nothing
+    , mayReceive = Nothing
+    , mayAccessImap = Nothing
+    , mayAccessPop3 = Nothing
+    , mayAccessManagesieve = Nothing
+    , footerActive = Nothing
+    , footerPlainBody = Nothing
+    , footerHtmlBody = Nothing
+    }
 
 aesonOptions :: Aeson.Options
 aesonOptions =

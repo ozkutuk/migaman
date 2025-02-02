@@ -23,7 +23,7 @@ import System.Environment qualified as Env
 import Prelude hiding (Read)
 
 import Migadu.Fields (MailboxType (..))
-import Migadu.Identity (Identities (..), Identity (..), defaultCreateIdentity)
+import Migadu.Identity (Identities (..), Identity (..), defaultCreateIdentity, defaultUpdateIdentity)
 import Migadu.Mailbox (Mailbox, Mailboxes)
 
 baseEndpoint :: Req.Url 'Req.Https
@@ -55,6 +55,15 @@ data MigaduRequest a where
     -> Text
     -- ^ Target local part
     -> Identity Create
+    -> MigaduRequest (Identity Read)
+  IdentitiesUpdate
+    :: Text
+    -- ^ Domain
+    -> Text
+    -- ^ Target local part
+    -> Text
+    -- ^ Alias local part
+    -> Identity Update
     -> MigaduRequest (Identity Read)
 
 mkAuthOpts :: MigaduAuth -> Req.Option 'Req.Https
@@ -121,6 +130,16 @@ identitiesCreate auth domain aliasTo identity =
       Req.jsonResponse
       (mkAuthOpts auth)
 
+identitiesUpdate :: MigaduAuth -> Text -> Text -> Text -> Identity Update -> Req.Req (Identity Read)
+identitiesUpdate auth domain aliasTo localPart identity =
+  Req.responseBody
+    <$> Req.req
+      Req.PUT
+      (baseEndpoint /: "domains" /: domain /: "mailboxes" /: aliasTo /: "identities" /: localPart)
+      (Req.ReqBodyJson identity)
+      Req.jsonResponse
+      (mkAuthOpts auth)
+
 runMigadu :: MigaduAuth -> MigaduRequest a -> IO a
 runMigadu auth =
   Req.runReq Req.defaultHttpConfig . \case
@@ -130,3 +149,4 @@ runMigadu auth =
     MailboxesDelete domain localPart -> mailboxesDelete auth domain localPart
     IdentitiesIndex domain localPart -> identitiesIndex auth domain localPart
     IdentitiesCreate domain aliasTo identity -> identitiesCreate auth domain aliasTo identity
+    IdentitiesUpdate domain aliasTo localPart identity -> identitiesUpdate auth domain aliasTo localPart identity
