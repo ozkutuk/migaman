@@ -72,7 +72,7 @@ generateAlias options auth conn = do
       createIdentity = Migadu.IdentitiesCreate options.domain options.target newIdentity
   createdIdentity <- Migadu.runMigadu auth createIdentity
   Query.insertIdentity options.accountName options.domain options.target createdIdentity conn
-  TIO.putStrLn createdIdentity.address
+  TIO.putStr createdIdentity.address
   where
     randomElement :: RandomS.StatefulGen g m => [a] -> g -> m a
     randomElement xs g = (xs !!) <$> RandomS.uniformRM (0, length xs - 1) g
