@@ -1,4 +1,4 @@
-module IdentityTable.Query (insertIdentity, insertIdentities, getIdentities) where
+module IdentityTable.Query (insertIdentity, insertIdentities, getIdentities, getIdentity, toggleIdentity) where
 
 import Data.Text (Text)
 import Database.Beam qualified as Beam
@@ -13,6 +13,23 @@ getIdentities conn = do
   let allAliases = Beam.all_ Model.migamanDb.identity
   Beam.runBeamSqlite conn $ do
     Beam.runSelectReturningList $ Beam.select allAliases
+
+getIdentity :: Text -> Sqlite.Connection -> IO (Maybe Model.Identity')
+getIdentity accountName conn = do
+  let account =
+        Beam.filter_ (\acc -> acc.account Beam.==. Beam.val_ accountName) $
+          Beam.all_ Model.migamanDb.identity
+  Beam.runBeamSqliteDebug putStrLn conn $ do
+    Beam.runSelectReturningOne $ Beam.select account
+
+toggleIdentity :: Bool -> Text -> Sqlite.Connection -> IO ()
+toggleIdentity enabled accountName conn = do
+  Beam.runBeamSqliteDebug putStrLn conn $ do
+    Beam.runUpdate $
+      Beam.update
+        Model.migamanDb.identity
+        (\acc -> acc.enabled Beam.<-. Beam.val_ enabled)
+        (\acc -> acc.account Beam.==. Beam.val_ accountName)
 
 insertIdentity
   :: Text
@@ -50,6 +67,7 @@ toIdentityTable account domain target identity =
     , localpart = Beam.val_ identity.localPart
     , domain = Beam.val_ domain
     , target = Beam.val_ target
+    , enabled = Beam.default_
     }
 
 insertIdentities

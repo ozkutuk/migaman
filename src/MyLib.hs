@@ -6,7 +6,7 @@ module MyLib where
 
 import Cli (Command (..), GlobalOptions)
 import Cli qualified
-import Control.Monad (replicateM, (<=<))
+import Control.Monad (replicateM, (<=<), void)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.FileEmbed qualified as Embed
@@ -51,13 +51,14 @@ listAliases = (putStrLn . formatAliases) <=< Query.getIdentities
     tabulateAliases identities =
       Tabular.Table
         (Tabular.Group Tabular.SingleLine (headerAccountNames identities))
-        (Tabular.Group Tabular.SingleLine $ map Tabular.Header ["email", "target"])
+        (Tabular.Group Tabular.SingleLine $ map Tabular.Header ["email", "target", "enabled"])
         (map mkRow identities)
       where
         mkRow :: Identity' -> [Text]
         mkRow identity =
           let mkEmail = (<> "@" <> identity.domain)
-           in [mkEmail identity.localpart, mkEmail identity.target]
+              enabled = if identity.enabled then "X" else ""
+           in [mkEmail identity.localpart, mkEmail identity.target, enabled]
 
         headerAccountNames :: [Identity'] -> [Tabular.Header Text]
         headerAccountNames = map (Tabular.Header . (.account))
@@ -81,6 +82,25 @@ generateAlias options auth conn = do
     randomText len = fmap T.pack . replicateM len . randomElement validChars
       where
         validChars = ['a' .. 'z'] <> ['0' .. '9']
+
+toggleAlias :: Bool -> Text -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+toggleAlias enabled accountName auth conn = do
+  mIdentity <- Query.getIdentity accountName conn
+  case mIdentity of
+    Nothing -> die $ "Account \"" <> T.unpack accountName <> "\" does not exist."
+    Just identity -> do
+      let updateIdentity = Migadu.IdentitiesUpdate identity.domain identity.target identity.localpart (updateAliasState enabled)
+      void $ Migadu.runMigadu auth updateIdentity
+      Query.toggleIdentity enabled accountName conn
+  where
+    updateAliasState :: Bool -> Migadu.Identity Migadu.Update
+    updateAliasState s = Migadu.defaultUpdateIdentity { Migadu.mayReceive = Just s }
+
+disableAlias :: Text -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+disableAlias = toggleAlias False
+
+enableAlias :: Text -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+enableAlias = toggleAlias True
 
 ensureConfigFile :: IO FilePath
 ensureConfigFile = do
@@ -110,6 +130,8 @@ main = do
     ListAliases -> listAliases conn
     ImportIdentities options -> importIdentities options env.auth conn
     GenerateAlias options -> generateAlias options env.auth conn
+    DisableAlias accountName -> disableAlias accountName env.auth conn
+    EnableAlias accountName -> enableAlias accountName env.auth conn
   where
     opts :: Opt.ParserInfo (GlobalOptions, Command Cli.OptionPhase)
     opts = Opt.info (Cli.parser Opt.<**> Opt.helper) Opt.fullDesc

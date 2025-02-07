@@ -34,6 +34,18 @@ command =
             (GenerateAlias <$> generateOptions)
             (Opt.progDesc "Generate a new alias")
         )
+      <> Opt.command
+        "disable"
+        ( Opt.info
+            (DisableAlias <$> accountName)
+            (Opt.progDesc "Disable an alias")
+        )
+      <> Opt.command
+        "enable"
+        ( Opt.info
+            (EnableAlias <$> accountName)
+            (Opt.progDesc "Enable an alias")
+        )
   where
     importOptions :: Opt.Parser ImportOptions
     importOptions =
@@ -62,8 +74,10 @@ command =
           ( Opt.strOption
               (Opt.long "name" <> Opt.metavar "NAME" <> Opt.help "User name of the generated identity")
           )
-        <*> Opt.strArgument
-          (Opt.metavar "ACCOUNT")
+        <*> accountName
+
+    accountName :: Opt.Parser Text
+    accountName = Opt.strArgument (Opt.metavar "ACCOUNT")
 
 globalOptions :: Opt.Parser GlobalOptions
 globalOptions =
@@ -80,6 +94,8 @@ data Command (phase :: Phase)
   = ListAliases
   | ImportIdentities (ImportCommand phase)
   | GenerateAlias (GenerateCommand phase)
+  | DisableAlias Text -- ^ account name
+  | EnableAlias Text -- ^ account name
 
 type family ImportCommand (phase :: Phase) where
   ImportCommand OptionPhase = ImportOptions
@@ -185,6 +201,8 @@ merge globals cmd config = Env dbPath auth <$> cmd'
           domain <- maybe (optError "domain") pure (opts.domain <|> config.defaults.domain)
           target <- maybe (optError "target") pure (opts.target <|> config.defaults.target)
           pure $ ImportEnv {domain, target}
+      DisableAlias accountName -> pure $ DisableAlias accountName
+      EnableAlias accountName -> pure $ EnableAlias accountName
       where
         optError :: String -> IO a
         optError opt = die $ "option not set: " <> opt

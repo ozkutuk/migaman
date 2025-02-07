@@ -22,6 +22,7 @@ data IdentityTable f = Identity'
   , localpart :: Columnar f Text
   , domain :: Columnar f Text
   , target :: Columnar f Text
+  , enabled :: Columnar f Bool
   }
   deriving stock (Generic)
   deriving anyclass (Beamable)
