@@ -23,6 +23,12 @@ command =
           (Opt.progDesc "List aliases")
       )
       <> Opt.command
+        "update"
+        ( Opt.info
+            (pure UpdateDatabase)
+            (Opt.progDesc "Initialize or update the Migaman database for the current version")
+        )
+      <> Opt.command
         "import"
         ( Opt.info
             (ImportIdentities <$> importOptions)
@@ -92,10 +98,13 @@ type data Phase = OptionPhase | EnvPhase
 
 data Command (phase :: Phase)
   = ListAliases
+  | UpdateDatabase
   | ImportIdentities (ImportCommand phase)
   | GenerateAlias (GenerateCommand phase)
-  | DisableAlias Text -- ^ account name
-  | EnableAlias Text -- ^ account name
+  | -- | account name
+    DisableAlias Text
+  | -- | account name
+    EnableAlias Text
 
 type family ImportCommand (phase :: Phase) where
   ImportCommand OptionPhase = ImportOptions
@@ -186,6 +195,7 @@ merge globals cmd config = Env dbPath auth <$> cmd'
     cmd' :: IO (Command EnvPhase)
     cmd' = case cmd of
       ListAliases -> pure ListAliases
+      UpdateDatabase -> pure UpdateDatabase
       GenerateAlias opts ->
         GenerateAlias <$> do
           -- optional

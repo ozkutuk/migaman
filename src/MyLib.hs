@@ -24,6 +24,7 @@ import System.Random.Stateful qualified as RandomS
 import TOML qualified as Toml
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
+import qualified Migrations
 
 importIdentities :: Cli.ImportEnv -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
 importIdentities options auth conn = do
@@ -125,13 +126,14 @@ main = do
   configPath <- ensureConfigFile
   config <- decodeFileOrDie Cli.configDecoder configPath
   env <- Cli.merge globals cmd config
-  conn <- Sqlite.open env.dbPath
-  case env.command of
-    ListAliases -> listAliases conn
-    ImportIdentities options -> importIdentities options env.auth conn
-    GenerateAlias options -> generateAlias options env.auth conn
-    DisableAlias accountName -> disableAlias accountName env.auth conn
-    EnableAlias accountName -> enableAlias accountName env.auth conn
+  Sqlite.withConnection env.dbPath $ \conn ->
+    case env.command of
+      ListAliases -> listAliases conn
+      UpdateDatabase -> Migrations.runMigrations conn
+      ImportIdentities options -> importIdentities options env.auth conn
+      GenerateAlias options -> generateAlias options env.auth conn
+      DisableAlias accountName -> disableAlias accountName env.auth conn
+      EnableAlias accountName -> enableAlias accountName env.auth conn
   where
     opts :: Opt.ParserInfo (GlobalOptions, Command Cli.OptionPhase)
     opts = Opt.info (Cli.parser Opt.<**> Opt.helper) Opt.fullDesc

@@ -42,6 +42,7 @@ library
     Cli
     IdentityTable.Model
     IdentityTable.Query
+    Migrations
     MyLib
 
   build-depends:
@@ -52,6 +53,8 @@ library
     , directory
     , file-embed
     , migadu
+    , migrant-core
+    , migrant-sqlite-simple
     , optparse-applicative
     , random
     , sqlite-simple
