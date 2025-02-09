@@ -126,7 +126,8 @@ main = do
   configPath <- ensureConfigFile
   config <- decodeFileOrDie Cli.configDecoder configPath
   env <- Cli.merge globals cmd config
-  Sqlite.withConnection env.dbPath $ \conn ->
+  Sqlite.withConnection env.dbPath $ \conn -> do
+    Migrations.runMigrations conn
     case env.command of
       ListAliases -> listAliases conn
       UpdateDatabase -> Migrations.runMigrations conn
