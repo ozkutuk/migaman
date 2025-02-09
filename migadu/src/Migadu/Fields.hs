@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeData #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -11,17 +11,17 @@ import Data.Text (Text)
 import Prelude hiding (Read)
 import Data.Kind (Type, Constraint)
 
-type data MailboxType = Create | Read | Update
+data MailboxType = Create | Read | Update
 
 type All' :: (Type -> Constraint) -> [Type] -> Constraint
 type family All' c xs where
   All' c '[] = ()
-  All' c (x : xs) = (c x, All' c xs)
+  All' c (x ': xs) = (c x, All' c xs)
 
 type MapUpdateable :: MailboxType -> [Type] -> [Type]
 type family MapUpdateable typ xs where
   MapUpdateable _ '[] = '[]
-  MapUpdateable typ (x : xs) = (Updateable typ x : MapUpdateable typ xs)
+  MapUpdateable typ (x ': xs) = (Updateable typ x ': MapUpdateable typ xs)
 
 type AllUpdateable (c :: Type -> Constraint) (typ :: MailboxType) (xs :: [Type]) =
   All' c (MapUpdateable typ xs)
@@ -34,29 +34,29 @@ type All (c :: Type -> Constraint) (typ :: MailboxType) =
   )
 
 type family LocalPart (typ :: MailboxType) where
-  LocalPart Create = Text
-  LocalPart Read = Text
-  LocalPart Update = ()
+  LocalPart 'Create = Text
+  LocalPart 'Read = Text
+  LocalPart 'Update = ()
 
 type family DomainName (typ :: MailboxType) where
-  DomainName Create = ()
-  DomainName Read = Text
-  DomainName Update = ()
+  DomainName 'Create = ()
+  DomainName 'Read = Text
+  DomainName 'Update = ()
 
 type family Address (typ :: MailboxType) where
-  Address Create = ()
-  Address Read = Text
-  Address Update = ()
+  Address 'Create = ()
+  Address 'Read = Text
+  Address 'Update = ()
 
 type family Password (typ :: MailboxType) where
-  Password Create = Text
-  Password Read = ()
-  Password Update = Text
+  Password 'Create = Text
+  Password 'Read = ()
+  Password 'Update = Text
 
 type family Updateable (typ :: MailboxType) (a :: Type) where
-  Updateable Create a = a
-  Updateable Read a = a
-  Updateable Update a = Maybe a
+  Updateable 'Create a = a
+  Updateable 'Read a = a
+  Updateable 'Update a = Maybe a
 
 data PasswordMethod (typ :: MailboxType) = Invitation Text | Password (Password typ)
 

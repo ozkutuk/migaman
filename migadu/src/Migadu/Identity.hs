@@ -18,8 +18,8 @@ deriving stock instance (All Eq typ, AllUpdateable Eq typ '[Text, Bool]) => Eq (
 deriving stock instance (All Ord typ, AllUpdateable Ord typ '[Text, Bool]) => Ord (Identities typ)
 deriving stock instance (All Show typ, AllUpdateable Show typ '[Text, Bool]) => Show (Identities typ)
 
-instance FromJSON (Identities Read) where
-  parseJSON :: Aeson.Value -> Aeson.Parser (Identities Read)
+instance FromJSON (Identities 'Read) where
+  parseJSON :: Aeson.Value -> Aeson.Parser (Identities 'Read)
   parseJSON = Aeson.genericParseJSON aesonOptions
 
 -- Maybe this should carry the "host mailbox" information as well?
@@ -44,8 +44,8 @@ deriving stock instance (All Eq typ, AllUpdateable Eq typ '[Text, Bool]) => Eq (
 deriving stock instance (All Ord typ, AllUpdateable Ord typ '[Text, Bool]) => Ord (Identity typ)
 deriving stock instance (All Show typ, AllUpdateable Show typ '[Text, Bool]) => Show (Identity typ)
 
-instance FromJSON (Identity Read) where
-  parseJSON :: Aeson.Value -> Aeson.Parser (Identity Read)
+instance FromJSON (Identity 'Read) where
+  parseJSON :: Aeson.Value -> Aeson.Parser (Identity 'Read)
   parseJSON = Aeson.withObject "Identity" $ \v -> do
     Identity
       <$> v .: "local_part"
@@ -70,8 +70,8 @@ appendObject :: Aeson.Value -> Aeson.Value -> Aeson.Value
 appendObject (Aeson.Object o1) (Aeson.Object o2) = Aeson.Object (o2 <> o1)
 appendObject v _ = v
 
-instance ToJSON (Identity Create) where
-  toJSON :: Identity Create -> Aeson.Value
+instance ToJSON (Identity 'Create) where
+  toJSON :: Identity 'Create -> Aeson.Value
   toJSON identity =
     -- appendObject (passwordFields identity.passwordMethod) $
     Aeson.Object $
@@ -100,7 +100,7 @@ instance ToJSON (Identity Create) where
 --             <> "password" .= password
 --
 
-defaultCreateIdentity :: Text -> Text -> Identity Create
+defaultCreateIdentity :: Text -> Text -> Identity 'Create
 defaultCreateIdentity name localPart =
   Identity
     { localPart
@@ -117,8 +117,8 @@ defaultCreateIdentity name localPart =
     , footerHtmlBody = Nothing
     }
 
-instance ToJSON (Identity Update) where
-  toJSON :: Identity Update -> Aeson.Value
+instance ToJSON (Identity 'Update) where
+  toJSON :: Identity 'Update -> Aeson.Value
   toJSON identity =
     Aeson.Object $
       maybeField "name" identity.name
@@ -134,7 +134,7 @@ instance ToJSON (Identity Update) where
 maybeField :: Aeson.ToJSON a => Aeson.Key -> Maybe a -> Aeson.Object
 maybeField k = maybe mempty (k .=)
 
-defaultUpdateIdentity :: Identity Update
+defaultUpdateIdentity :: Identity 'Update
 defaultUpdateIdentity =
   Identity
     { localPart = ()

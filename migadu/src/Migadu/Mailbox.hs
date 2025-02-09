@@ -20,8 +20,8 @@ deriving stock instance All Eq typ => Eq (Mailboxes typ)
 deriving stock instance All Ord typ => Ord (Mailboxes typ)
 deriving stock instance All Show typ => Show (Mailboxes typ)
 
-instance FromJSON (Mailboxes Read) where
-  parseJSON :: Aeson.Value -> Aeson.Parser (Mailboxes Read)
+instance FromJSON (Mailboxes 'Read) where
+  parseJSON :: Aeson.Value -> Aeson.Parser (Mailboxes 'Read)
   parseJSON = Aeson.genericParseJSON aesonOptions
 
 data Mailbox (typ :: MailboxType) = Mailbox
@@ -66,8 +66,8 @@ deriving stock instance All Eq typ => Eq (Mailbox typ)
 deriving stock instance All Ord typ => Ord (Mailbox typ)
 deriving stock instance All Show typ => Show (Mailbox typ)
 
-instance FromJSON (Mailbox Read) where
-  parseJSON :: Aeson.Value -> Aeson.Parser (Mailbox Read)
+instance FromJSON (Mailbox 'Read) where
+  parseJSON :: Aeson.Value -> Aeson.Parser (Mailbox 'Read)
   parseJSON = Aeson.withObject "Mailbox" $ \v -> do
     Mailbox
       <$> v .: "local_part"
@@ -94,15 +94,15 @@ instance FromJSON (Mailbox Read) where
       <*> v .:? "footer_plain_body"
       <*> v .:? "footer_html_body"
     where
-      passwordMethodParser :: Aeson.Object -> Aeson.Parser (PasswordMethod Read)
+      passwordMethodParser :: Aeson.Object -> Aeson.Parser (PasswordMethod 'Read)
       passwordMethodParser v = maybe (Password ()) Invitation <$> v .:? "password_recovery_email"
 
 appendObject :: Aeson.Value -> Aeson.Value -> Aeson.Value
 appendObject (Aeson.Object o1) (Aeson.Object o2) = Aeson.Object (o2 <> o1)
 appendObject v _ = v
 
-instance ToJSON (Mailbox Create) where
-  toJSON :: Mailbox Create -> Aeson.Value
+instance ToJSON (Mailbox 'Create) where
+  toJSON :: Mailbox 'Create -> Aeson.Value
   toJSON mailbox =
     appendObject (passwordFields mailbox.passwordMethod) $
       Aeson.Object $
@@ -129,7 +129,7 @@ instance ToJSON (Mailbox Create) where
           <> "footer_plain_body" .= mailbox.footerPlainBody
           <> "footer_html_body" .= mailbox.footerHtmlBody
     where
-      passwordFields :: PasswordMethod Create -> Aeson.Value
+      passwordFields :: PasswordMethod 'Create -> Aeson.Value
       passwordFields (Invitation recoveryEmail) =
         Aeson.Object $
           "password_method" .= ("invitation" :: Text)
@@ -168,7 +168,7 @@ instance ToJSON (Mailbox Create) where
 --     , footerHtmlBody = Nothing
 --     }
 
-mkMailbox :: Text -> Text -> Text -> Mailbox Create
+mkMailbox :: Text -> Text -> Text -> Mailbox 'Create
 mkMailbox name localPart password =
   Mailbox
     { localPart

@@ -30,7 +30,7 @@ common warnings
   ghc-options:
     -Wall -Wcompat -Widentities -Wpartial-fields
     -Wredundant-constraints -fhide-source-paths -fshow-hole-constraints
-    -Wunused-packages
+    -Wunused-packages -Wunticked-promoted-constructors
 
 library
   import:

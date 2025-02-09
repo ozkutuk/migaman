@@ -44,18 +44,18 @@ getAuth = do
   pure $ MigaduAuth <$> mAccount <*> mKey
 
 data MigaduRequest a where
-  MailboxesIndex :: Text -> MigaduRequest (Mailboxes Read)
-  MailboxesShow :: Text -> Text -> MigaduRequest (Mailbox Read)
-  MailboxesCreate :: Text -> Mailbox Create -> MigaduRequest (Mailbox Read)
-  MailboxesDelete :: Text -> Text -> MigaduRequest (Mailbox Read)
-  IdentitiesIndex :: Text -> Text -> MigaduRequest (Identities Read)
+  MailboxesIndex :: Text -> MigaduRequest (Mailboxes 'Read)
+  MailboxesShow :: Text -> Text -> MigaduRequest (Mailbox 'Read)
+  MailboxesCreate :: Text -> Mailbox 'Create -> MigaduRequest (Mailbox 'Read)
+  MailboxesDelete :: Text -> Text -> MigaduRequest (Mailbox 'Read)
+  IdentitiesIndex :: Text -> Text -> MigaduRequest (Identities 'Read)
   IdentitiesCreate
     :: Text
     -- ^ Domain
     -> Text
     -- ^ Target local part
-    -> Identity Create
-    -> MigaduRequest (Identity Read)
+    -> Identity 'Create
+    -> MigaduRequest (Identity 'Read)
   IdentitiesUpdate
     :: Text
     -- ^ Domain
@@ -63,13 +63,13 @@ data MigaduRequest a where
     -- ^ Target local part
     -> Text
     -- ^ Alias local part
-    -> Identity Update
-    -> MigaduRequest (Identity Read)
+    -> Identity 'Update
+    -> MigaduRequest (Identity 'Read)
 
 mkAuthOpts :: MigaduAuth -> Req.Option 'Req.Https
 mkAuthOpts (MigaduAuth account key) = Req.basicAuth account key
 
-mailboxesIndex :: MigaduAuth -> Text -> Req.Req (Mailboxes Read)
+mailboxesIndex :: MigaduAuth -> Text -> Req.Req (Mailboxes 'Read)
 mailboxesIndex auth domain =
   Req.responseBody
     <$> Req.req
@@ -79,7 +79,7 @@ mailboxesIndex auth domain =
       Req.jsonResponse
       (mkAuthOpts auth)
 
-mailboxesShow :: MigaduAuth -> Text -> Text -> Req.Req (Mailbox Read)
+mailboxesShow :: MigaduAuth -> Text -> Text -> Req.Req (Mailbox 'Read)
 -- mailboxesShow :: MigaduAuth -> Text -> Text -> Req.Req Aeson.Value
 mailboxesShow auth domain mailbox =
   Req.responseBody
@@ -90,7 +90,7 @@ mailboxesShow auth domain mailbox =
       Req.jsonResponse
       (mkAuthOpts auth)
 
-mailboxesCreate :: MigaduAuth -> Text -> Mailbox Create -> Req.Req (Mailbox Read)
+mailboxesCreate :: MigaduAuth -> Text -> Mailbox 'Create -> Req.Req (Mailbox 'Read)
 mailboxesCreate auth domain mailbox =
   Req.responseBody
     <$> Req.req
@@ -100,7 +100,7 @@ mailboxesCreate auth domain mailbox =
       Req.jsonResponse
       (mkAuthOpts auth)
 
-mailboxesDelete :: MigaduAuth -> Text -> Text -> Req.Req (Mailbox Read)
+mailboxesDelete :: MigaduAuth -> Text -> Text -> Req.Req (Mailbox 'Read)
 mailboxesDelete auth domain localPart =
   Req.responseBody
     <$> Req.req
@@ -110,7 +110,7 @@ mailboxesDelete auth domain localPart =
       Req.jsonResponse
       (mkAuthOpts auth)
 
-identitiesIndex :: MigaduAuth -> Text -> Text -> Req.Req (Identities Read)
+identitiesIndex :: MigaduAuth -> Text -> Text -> Req.Req (Identities 'Read)
 identitiesIndex auth domain localPart =
   Req.responseBody
     <$> Req.req
@@ -120,7 +120,7 @@ identitiesIndex auth domain localPart =
       Req.jsonResponse
       (mkAuthOpts auth)
 
-identitiesCreate :: MigaduAuth -> Text -> Text -> Identity Create -> Req.Req (Identity Read)
+identitiesCreate :: MigaduAuth -> Text -> Text -> Identity 'Create -> Req.Req (Identity 'Read)
 identitiesCreate auth domain aliasTo identity =
   Req.responseBody
     <$> Req.req
@@ -130,7 +130,7 @@ identitiesCreate auth domain aliasTo identity =
       Req.jsonResponse
       (mkAuthOpts auth)
 
-identitiesUpdate :: MigaduAuth -> Text -> Text -> Text -> Identity Update -> Req.Req (Identity Read)
+identitiesUpdate :: MigaduAuth -> Text -> Text -> Text -> Identity 'Update -> Req.Req (Identity 'Read)
 identitiesUpdate auth domain aliasTo localPart identity =
   Req.responseBody
     <$> Req.req
