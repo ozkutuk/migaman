@@ -10,10 +10,6 @@
 account =
 key =
 
-# - 'database' is the path the to SQLite database used by Migaman.
-[migaman]
-database =
-
 # Here you can set the default values to be used by commands. These are
 # optional; but anything you don't specify here, you need to provide via
 # the corresponding CLI option.
@@ -21,3 +17,7 @@ database =
 # domain =
 # target =
 # name =
+
+# - 'database' is the path the to SQLite database used by Migaman.
+[migaman]
+database =

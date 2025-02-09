@@ -12,6 +12,7 @@ import Data.ByteString qualified as BS
 import Data.FileEmbed qualified as Embed
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as T
 import Data.Text.IO qualified as TIO
 import Database.SQLite.Simple qualified as Sqlite
 import IdentityTable.Model (Identity', IdentityTable (..))
@@ -25,6 +26,8 @@ import TOML qualified as Toml
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
 import qualified Migrations
+import qualified Data.ByteString.Char8 as BSC
+import qualified System.FilePath as FilePath
 
 importIdentities :: Cli.ImportEnv -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
 importIdentities options auth conn = do
@@ -110,7 +113,8 @@ ensureConfigFile = do
   if configExists
     then pure configPath
     else do
-      BS.writeFile configPath configContents
+      epilogue <- configEpilogue
+      BS.writeFile configPath (BSC.strip configContents <> epilogue)
       die $
         unlines
           [ "Configuration file written to: " <> configPath
@@ -120,12 +124,23 @@ ensureConfigFile = do
     configContents :: ByteString
     configContents = $(Embed.embedFileRelative "migaman.toml.sample")
 
+    configEpilogue :: IO ByteString
+    configEpilogue =
+      let quotes s = '"' : s <> "\"" in
+      T.encodeUtf8 . T.pack . (' ':) . quotes <$> Dir.getXdgDirectory Dir.XdgData "migaman/db.sqlite3"
+
+ensureDirOf :: FilePath -> IO ()
+ensureDirOf fp = do
+  let dir = FilePath.takeDirectory fp
+  Dir.createDirectoryIfMissing True dir
+
 main :: IO ()
 main = do
   (globals, cmd) <- Opt.execParser opts
   configPath <- ensureConfigFile
   config <- decodeFileOrDie Cli.configDecoder configPath
   env <- Cli.merge globals cmd config
+  ensureDirOf env.dbPath
   Sqlite.withConnection env.dbPath $ \conn -> do
     Migrations.runMigrations conn
     case env.command of

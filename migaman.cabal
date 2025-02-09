@@ -51,6 +51,7 @@ library
     , beam-sqlite
     , bytestring
     , directory
+    , filepath
     , file-embed
     , migadu
     , migrant-core
