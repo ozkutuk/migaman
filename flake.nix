@@ -7,7 +7,11 @@
   };
 
   outputs = inputs:
-    inputs.flake-parts.lib.mkFlake {inherit inputs;} {
+    inputs.flake-parts.lib.mkFlake {inherit inputs;} ({
+      flake-parts-lib,
+      moduleWithSystem,
+      ...
+    }: {
       systems = [
         "aarch64-darwin"
         "aarch64-linux"
@@ -17,6 +21,7 @@
       perSystem = {
         pkgs,
         system,
+        config,
         ...
       }: let
         pkgs = inputs.nixpkgs.legacyPackages.${system};
@@ -25,7 +30,6 @@
           migadu = ./migadu;
         };
         hsPkgs = pkgs.haskell.packages.ghc982.extend myOverlay;
-
       in {
         devShells.default = hsPkgs.shellFor {
           packages = p: [p.migaman p.migadu];
@@ -42,9 +46,18 @@
           ];
         };
 
-        packages.default = hsPkgs.migaman;
+        packages.migaman = pkgs.haskell.lib.justStaticExecutables hsPkgs.migaman;
+        packages.default = config.packages.migaman;
 
         formatter = pkgs.alejandra;
       };
-    };
+      flake = {config, ...}: {
+        homeManagerModules = {
+          migaman = moduleWithSystem (
+            perSystem @ {config}: flake-parts-lib.importApply ./nix/migaman.nix perSystem
+          );
+          default = config.homeManagerModules.migaman;
+        };
+      };
+    });
 }
