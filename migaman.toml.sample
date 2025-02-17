@@ -2,13 +2,18 @@
 
 # Fill in the fields below accordingly.
 
-# - 'account' is the administrative email address you use to login to
-#   your Migadu account.
-# - 'key' is the API key you generated on Migadu. If you have not done
-#   that yet, please visit: https://www.migadu.com/api/#api-keys
+# - 'account' is the administrative email address you use to login to your
+#   Migadu account.
+#
+# - 'keyCommand' is a shell command to retrieve your Migadu API key, e.g. from
+#   your password manager. Alternatively, you can provide your key in plain
+#   text by setting the 'key' field. However using 'keyCommand' is recommended.
+#   If you have not yet generated an API key, please visit:
+#   https://www.migadu.com/api/#api-keys
 [migadu.auth]
 account =
-key =
+keyCommand =
+# key =
 
 # Here you can set the default values to be used by commands. These are
 # optional; but anything you don't specify here, you need to provide via
