@@ -7,7 +7,6 @@ module Cli where
 import Control.Applicative ((<|>))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
-import Data.Text.Encoding qualified as T
 import Migadu qualified
 import Options.Applicative qualified as Opt
 import System.Exit (die)
@@ -143,7 +142,7 @@ data GenerateEnv = GenerateEnv
   }
 
 data Config = Config
-  { auth :: Migadu.MigaduAuth
+  { auth :: Migadu.MigaduAuthInput
   , dbPath :: FilePath
   , defaults :: Defaults
   }
@@ -167,11 +166,13 @@ configDecoder =
     <*> Toml.getFields ["migaman", "database"]
     <*> Toml.getFieldsWith defaultsDecoder ["migaman", "defaults"]
   where
-    authDecoder :: Toml.Decoder Migadu.MigaduAuth
+    authDecoder :: Toml.Decoder Migadu.MigaduAuthInput
     authDecoder =
-      let account = T.encodeUtf8 <$> Toml.getField "account"
-          key = T.encodeUtf8 <$> Toml.getField "key"
-       in Migadu.mkAuth <$> account <*> key
+      let account = Toml.getField "account"
+          key =
+            Migadu.mkPlainKey <$> Toml.getField "key"
+              <|> Migadu.mkKeyCommand <$> Toml.getField "keyCommand"
+       in Migadu.mkAuthInput <$> account <*> key
 
     defaultsDecoder :: Toml.Decoder Defaults
     defaultsDecoder =
@@ -184,10 +185,10 @@ parser :: Opt.Parser (GlobalOptions, Command OptionPhase)
 parser = (,) <$> globalOptions <*> command
 
 merge :: GlobalOptions -> Command OptionPhase -> Config -> IO Env
-merge globals cmd config = Env dbPath auth <$> cmd'
+merge globals cmd config = Env dbPath <$> auth <*> cmd'
   where
-    auth :: Migadu.MigaduAuth
-    auth = config.auth
+    auth :: IO Migadu.MigaduAuth
+    auth = Migadu.mkAuth config.auth
 
     dbPath :: FilePath
     dbPath = fromMaybe config.dbPath globals.dbPath

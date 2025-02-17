@@ -52,6 +52,7 @@ library
     , req
     , text
     , time
+    , typed-process
 
   hs-source-dirs:  src
 
