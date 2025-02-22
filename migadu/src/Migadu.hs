@@ -34,6 +34,7 @@ import Migadu.Identity (Identities (..), Identity (..), defaultCreateIdentity, d
 import Migadu.Mailbox (Mailbox, Mailboxes)
 import qualified Data.ByteString as BS
 import qualified Data.Text.Encoding as T
+import Data.Char (isSpace)
 
 baseEndpoint :: Req.Url 'Req.Https
 baseEndpoint = Req.https "api.migadu.com" /: "v1"
@@ -67,7 +68,7 @@ mkAuth (MigaduAuthInput (T.encodeUtf8 -> account) inKey) =
     KeyPlain (T.encodeUtf8 -> key) -> pure MigaduAuth{..}
     KeyCommand keyCmd -> do
       let cmd = Process.shell keyCmd
-      key <- BS.toStrict <$> Process.readProcessStdout_ cmd
+      key <- BSC.dropWhileEnd isSpace . BS.toStrict <$> Process.readProcessStdout_ cmd
       pure MigaduAuth{..}
 
 getAuth :: IO (Maybe MigaduAuth)
