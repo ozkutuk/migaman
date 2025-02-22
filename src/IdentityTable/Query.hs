@@ -67,7 +67,7 @@ toIdentityTable account domain target identity =
     , localpart = Beam.val_ identity.localPart
     , domain = Beam.val_ domain
     , target = Beam.val_ target
-    , enabled = Beam.default_
+    , enabled = Beam.val_ identity.mayReceive
     }
 
 insertIdentities
