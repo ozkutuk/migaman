@@ -13,7 +13,9 @@ maintainer:      berk@ozkutuk.me
 category:        Web
 build-type:      Simple
 extra-doc-files: CHANGELOG.md
-extra-source-files: migaman.toml.sample
+extra-source-files:
+  README.md
+  migaman.toml.sample
 
 common common-extensions
   default-extensions:
