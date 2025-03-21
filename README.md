@@ -1,5 +1,7 @@
 # migaman
 
+![demo](demo.gif)
+
 Migaman is a CLI email alias manager for [Migadu][migadu] users. It allows you
 to generate and manage per-service email addresses with ease, allowing you to
 protect your primary email address from spam without sacrificing convenience.
