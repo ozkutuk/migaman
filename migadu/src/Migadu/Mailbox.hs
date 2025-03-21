@@ -139,35 +139,6 @@ instance ToJSON (Mailbox 'Create) where
           "password_method" .= ("password" :: Text)
             <> "password" .= password
 
--- readBox :: Mailbox Read
--- readBox =
---   Mailbox
---     { localPart = "foo"
---     , name = "bar"
---     , domainName = "foobar"
---     , address = "foo@foobar"
---     , isInternal = False
---     , maySend = True
---     , mayReceive = True
---     , mayAccessImap = True
---     , mayAccessPop3 = True
---     , mayAccessManagesieve = True
---     , passwordMethod = Password ()
---     , -- , passwordRecoveryEmail = Nothing
---       spamAction = Folder
---     , spamAggressiveness = DefaultAggressiveness
---     , senderDenylist = []
---     , senderAllowlist = []
---     , recipientDenylist = []
---     , autorespondActive = False
---     , autorespondSubject = T.empty
---     , autorespondBody = T.empty
---     , autorespondExpiresOn = Nothing
---     , footerActive = Nothing
---     , footerPlainBody = Nothing
---     , footerHtmlBody = Nothing
---     }
-
 mkMailbox :: Text -> Text -> Text -> Mailbox 'Create
 mkMailbox name localPart password =
   Mailbox

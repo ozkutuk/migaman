@@ -33,8 +33,7 @@ data Identity (typ :: MailboxType) = Identity
   , mayAccessImap :: !(Updateable typ Bool)
   , mayAccessPop3 :: !(Updateable typ Bool)
   , mayAccessManagesieve :: !(Updateable typ Bool)
-  , -- , password :: !(PasswordMethod typ)
-    footerActive :: Maybe Text
+  , footerActive :: Maybe Text
   , footerPlainBody :: Maybe Text
   , footerHtmlBody :: Maybe Text
   }
@@ -57,14 +56,9 @@ instance FromJSON (Identity 'Read) where
       <*> v .: "may_access_imap"
       <*> v .: "may_access_pop3"
       <*> v .: "may_access_managesieve"
-      -- <*> passwordMethodParser v
       <*> v .:? "footer_active"
       <*> v .:? "footer_plain_body"
       <*> v .:? "footer_html_body"
-
--- where
---   passwordMethodParser :: Aeson.Object -> Aeson.Parser (PasswordMethod Read)
---   passwordMethodParser v = maybe (Password ()) Invitation <$> v .:? "password_recovery_email"
 
 appendObject :: Aeson.Value -> Aeson.Value -> Aeson.Value
 appendObject (Aeson.Object o1) (Aeson.Object o2) = Aeson.Object (o2 <> o1)
@@ -73,7 +67,6 @@ appendObject v _ = v
 instance ToJSON (Identity 'Create) where
   toJSON :: Identity 'Create -> Aeson.Value
   toJSON identity =
-    -- appendObject (passwordFields identity.passwordMethod) $
     Aeson.Object $
       "local_part" .= identity.localPart
         <> "domain_name" .= identity.domainName
@@ -87,18 +80,6 @@ instance ToJSON (Identity 'Create) where
         <> "footer_active" .= identity.footerActive
         <> "footer_plain_body" .= identity.footerPlainBody
         <> "footer_html_body" .= identity.footerHtmlBody
-
---     where
---       passwordFields :: PasswordMethod Create -> Aeson.Value
---       passwordFields (Invitation recoveryEmail) =
---         Aeson.Object $
---           "password_method" .= ("invitation" :: Text)
---             <> "password_recovery_email" .= recoveryEmail
---       passwordFields (Password password) =
---         Aeson.Object $
---           "password_method" .= ("password" :: Text)
---             <> "password" .= password
---
 
 defaultCreateIdentity :: Text -> Text -> Identity 'Create
 defaultCreateIdentity name localPart =
