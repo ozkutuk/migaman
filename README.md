@@ -113,7 +113,7 @@ x83vk1gv0a@example.com
 
 # ...or you can directly pipe the output to your CLI clipboard
 # utility of choice:
-# $ migaman generate untrusted-service | wl-copy
+# $ migaman generate untrusted-service | wl-copy -n
 ```
 
 Migaman has generated a new Migadu "identity" that you can use while registering
