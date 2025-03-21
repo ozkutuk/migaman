@@ -19,12 +19,12 @@ getIdentity accountName conn = do
   let account =
         Beam.filter_ (\acc -> acc.account Beam.==. Beam.val_ accountName) $
           Beam.all_ Model.migamanDb.identity
-  Beam.runBeamSqliteDebug putStrLn conn $ do
+  Beam.runBeamSqlite conn $ do
     Beam.runSelectReturningOne $ Beam.select account
 
 toggleIdentity :: Bool -> Text -> Sqlite.Connection -> IO ()
 toggleIdentity enabled accountName conn = do
-  Beam.runBeamSqliteDebug putStrLn conn $ do
+  Beam.runBeamSqlite conn $ do
     Beam.runUpdate $
       Beam.update
         Model.migamanDb.identity
