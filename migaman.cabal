@@ -45,7 +45,7 @@ library
     IdentityTable.Model
     IdentityTable.Query
     Migrations
-    MyLib
+    Migaman
 
   build-depends:
     , base                  ^>=4.19.1.0

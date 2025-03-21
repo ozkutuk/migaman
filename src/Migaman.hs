@@ -1,8 +1,7 @@
-{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module MyLib where
+module Migaman where
 
 import Cli (Command (..), GlobalOptions)
 import Cli qualified
