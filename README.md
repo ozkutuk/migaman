@@ -15,7 +15,12 @@ recipient.
 
 ## Installation
 
-### Option 1: Nix
+### Option 1: Pre-built binaries
+
+You can find the pre-built binaries in [GitHub releases][releases]. For the
+time being, only Linux binaries are provided.
+
+### Option 2: Nix
 
 If you have the [Nix][nix] package manager with Flakes support enabled, you can
 run Migaman with:
@@ -27,7 +32,7 @@ $ nix run github:ozkutuk/migaman
 If you want to install Migaman to your system rather than always running from
 the GitHub source, please refer to the Nix manual.
 
-### Option 2: Building from source
+### Option 3: Building from source
 
 This option involves installing the Haskell toolchain, and the easiest way to do
 so is via [GHCup][ghcup]. Please follow the instructions on the GHCup website to
@@ -37,6 +42,8 @@ Once the toolchain is installed, compile and install the executable to your
 system:
 
 ```bash
+$ git clone https://github.com/ozkutuk/migaman
+$ cd migaman
 $ cabal install exe:migaman
 ```
 
@@ -46,7 +53,7 @@ Afterwards, you can run the program:
 $ migaman
 ```
 
-### Option 3: home-manager
+### Option 4: home-manager
 
 If you have a [home-manager][home-manager] installation set up with Flakes, you
 can use the home-manager module to install _and configure_ Migaman:
@@ -129,7 +136,7 @@ $ migaman list
 +-------------------++------------------------+-----------------------+---------+
 ```
 
-If at some point you are bothered by the emails you recieve on that alias, you
+If at some point you are bothered by the emails you receive on that alias, you
 can simply disable it:
 
 ```bash
@@ -145,3 +152,4 @@ That's about it. You can see the full list of commands supported by running
 [nix]: https://nixos.org/
 [ghcup]: https://www.haskell.org/ghcup/
 [home-manager]: https://github.com/nix-community/home-manager
+[releases]: https://github.com/ozkutuk/migaman/releases
