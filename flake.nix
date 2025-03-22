@@ -59,7 +59,7 @@
         };
 
         packages.migaman = pkgs.haskell.lib.justStaticExecutables hsPkgs.migaman;
-        packages.migaman-static = pkgs.haskell.lib.overrideCabal hsPkgsStatic.migaman (old: {
+        packages.migaman-static = (pkgs.haskell.lib.overrideCabal hsPkgsStatic.migaman (old: {
           postInstall = (old.postInstall or "") + ''
             for b in $out/bin/*
             do
@@ -78,6 +78,13 @@
           ];
           enableSharedExecutables = false;
           enableSharedLibraries = false;
+        })).overrideAttrs (old: {
+          postPhases = (old.postPhases or [ ]) ++ ["compressionPhase"];
+          nativeBuildInputs = old.nativeBuildInputs ++ [pkgs.upx];
+          compressionPhase = ''
+            echo "compressing the executable"
+            upx --best $out/bin/migaman
+          '';
         });
 
         packages.default = config.packages.migaman;
