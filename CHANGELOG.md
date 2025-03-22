@@ -1,5 +1,9 @@
-# Revision history for migaman
+# Changelog
 
-## 0.1.0.0 -- YYYY-mm-dd
+All notable changes to this project will be documented in this file.
 
-* First version. Released on an unsuspecting world.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+- Initial version
