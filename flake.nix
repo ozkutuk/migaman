@@ -30,13 +30,13 @@
           migaman = ./.;
           migadu = ./migadu;
         };
-        hsPkgs = pkgs.haskell.packages.ghc982.extend myOverlay;
+        hsPkgs = pkgs.haskellPackages.extend myOverlay;
         fixGhc = pkg: pkg.override {
           enableRelocatedStaticLibs = true;
           enableShared = false;
           enableDwarf = false;
         };
-        hsPkgsStatic = (pkgsStatic.haskell.packages.ghc982.override (old: {
+        hsPkgsStatic = (pkgsStatic.haskellPackages.override (old: {
           ghc = fixGhc old.ghc;
           buildHaskellPackages = old.buildHaskellPackages.override (oldBHP: {
             ghc = fixGhc oldBHP.ghc;
