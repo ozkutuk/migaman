@@ -1,8 +1,8 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Migadu
@@ -29,12 +29,12 @@ import System.Environment qualified as Env
 import System.Process.Typed qualified as Process
 import Prelude hiding (Read)
 
+import Data.ByteString qualified as BS
+import Data.Char (isSpace)
+import Data.Text.Encoding qualified as T
 import Migadu.Fields (MailboxType (..))
 import Migadu.Identity (Identities (..), Identity (..), defaultCreateIdentity, defaultUpdateIdentity)
 import Migadu.Mailbox (Mailbox, Mailboxes)
-import qualified Data.ByteString as BS
-import qualified Data.Text.Encoding as T
-import Data.Char (isSpace)
 
 baseEndpoint :: Req.Url 'Req.Https
 baseEndpoint = Req.https "api.migadu.com" /: "v1"
@@ -65,11 +65,11 @@ mkAuthInput = MigaduAuthInput
 mkAuth :: MigaduAuthInput -> IO MigaduAuth
 mkAuth (MigaduAuthInput (T.encodeUtf8 -> account) inKey) =
   case inKey of
-    KeyPlain (T.encodeUtf8 -> key) -> pure MigaduAuth{..}
+    KeyPlain (T.encodeUtf8 -> key) -> pure MigaduAuth {..}
     KeyCommand keyCmd -> do
       let cmd = Process.shell keyCmd
       key <- BSC.dropWhileEnd isSpace . BS.toStrict <$> Process.readProcessStdout_ cmd
-      pure MigaduAuth{..}
+      pure MigaduAuth {..}
 
 getAuth :: IO (Maybe MigaduAuth)
 getAuth = do

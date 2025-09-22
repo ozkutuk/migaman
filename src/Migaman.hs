@@ -5,9 +5,10 @@ module Migaman where
 
 import Cli (Command (..), GlobalOptions)
 import Cli qualified
-import Control.Monad (replicateM, (<=<), void)
+import Control.Monad (replicateM, void, (<=<))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.ByteString.Char8 qualified as BSC
 import Data.FileEmbed qualified as Embed
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -17,16 +18,15 @@ import Database.SQLite.Simple qualified as Sqlite
 import IdentityTable.Model (Identity', IdentityTable (..))
 import IdentityTable.Query qualified as Query
 import Migadu qualified
+import Migrations qualified
 import Options.Applicative qualified as Opt
 import System.Directory qualified as Dir
 import System.Exit (die)
+import System.FilePath qualified as FilePath
 import System.Random.Stateful qualified as RandomS
 import TOML qualified as Toml
 import Text.Tabular qualified as Tabular
 import Text.Tabular.AsciiArt qualified as Tabular
-import qualified Migrations
-import qualified Data.ByteString.Char8 as BSC
-import qualified System.FilePath as FilePath
 
 importIdentities :: Cli.ImportEnv -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
 importIdentities options auth conn = do
@@ -97,7 +97,7 @@ toggleAlias enabled accountName auth conn = do
       Query.toggleIdentity enabled accountName conn
   where
     updateAliasState :: Bool -> Migadu.Identity Migadu.Update
-    updateAliasState s = Migadu.defaultUpdateIdentity { Migadu.mayReceive = Just s }
+    updateAliasState s = Migadu.defaultUpdateIdentity {Migadu.mayReceive = Just s}
 
 disableAlias :: Text -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
 disableAlias = toggleAlias False
@@ -125,8 +125,8 @@ ensureConfigFile = do
 
     configEpilogue :: IO ByteString
     configEpilogue =
-      let quotes s = '"' : s <> "\"" in
-      T.encodeUtf8 . T.pack . (' ':) . quotes <$> Dir.getXdgDirectory Dir.XdgData "migaman/db.sqlite3"
+      let quotes s = '"' : s <> "\""
+       in T.encodeUtf8 . T.pack . (' ' :) . quotes <$> Dir.getXdgDirectory Dir.XdgData "migaman/db.sqlite3"
 
 ensureDirOf :: FilePath -> IO ()
 ensureDirOf fp = do

@@ -1,6 +1,6 @@
 module Main where
 
-import qualified Migaman
+import Migaman qualified
 
 main :: IO ()
 main = Migaman.main

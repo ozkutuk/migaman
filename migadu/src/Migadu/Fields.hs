@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -7,9 +7,9 @@ module Migadu.Fields where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Aeson qualified as Aeson
+import Data.Kind (Constraint, Type)
 import Data.Text (Text)
 import Prelude hiding (Read)
-import Data.Kind (Type, Constraint)
 
 data MailboxType = Create | Read | Update
 

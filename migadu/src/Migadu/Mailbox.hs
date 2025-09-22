@@ -9,8 +9,8 @@ import Data.Aeson.Types qualified as Aeson
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time (UTCTime)
-import Migadu.Fields (Address, All, DomainName, LocalPart, MailboxType (..), PasswordMethod (..), SpamAction (..), SpamAggressiveness (..))
 import GHC.Generics (Generic)
+import Migadu.Fields (Address, All, DomainName, LocalPart, MailboxType (..), PasswordMethod (..), SpamAction (..), SpamAggressiveness (..))
 import Prelude hiding (Read)
 
 newtype Mailboxes (typ :: MailboxType) = Mailboxes {mailboxes :: [Mailbox typ]}

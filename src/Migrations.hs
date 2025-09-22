@@ -61,7 +61,8 @@ migrateUp name conn = case name of
       , "ALTER TABLE \"identity\" ADD COLUMN \"target\" TEXT;"
       ]
   AddEnabledToIdentity ->
-    Sqlite.execute_ conn
+    Sqlite.execute_
+      conn
       "ALTER TABLE \"identity\" ADD COLUMN \"enabled\" INTEGER NOT NULL DEFAULT 1;"
 
 migrateDown :: Migration -> Sqlite.Connection -> IO ()
@@ -75,5 +76,6 @@ migrateDown name conn = case name of
       , "ALTER TABLE \"identity\" DROP COLUMN \"target\";"
       ]
   AddEnabledToIdentity ->
-    Sqlite.execute_ conn
+    Sqlite.execute_
+      conn
       "ALTER TABLE \"identity\" DROP COLUMN \"enabled\";"
