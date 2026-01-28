@@ -50,8 +50,9 @@
             hsPkgs.cabal-install
             hsPkgs.haskell-language-server
             hsPkgs.fourmolu
-            hsPkgs.cabal-fmt
+            hsPkgs.cabal-gild
 
+            pkgs.alejandra
             pkgs.just
             pkgs.sqlite
             pkgs.sqlitebrowser
