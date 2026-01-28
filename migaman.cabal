@@ -1,12 +1,12 @@
-cabal-version:   3.0
-name:            migaman
-version:         0.1.0
-license:         GPL-3.0-or-later
-license-file:    LICENSE
-author:          Berk Özkütük
-maintainer:      berk@ozkutuk.me
-category:        Web
-build-type:      Simple
+cabal-version: 3.0
+name: migaman
+version: 0.1.0
+license: GPL-3.0-or-later
+license-file: LICENSE
+author: Berk Özkütük
+maintainer: berk@ozkutuk.me
+category: Web
+build-type: Simple
 extra-doc-files: CHANGELOG.md
 extra-source-files:
   README.md
@@ -19,12 +19,17 @@ common common-extensions
     NoFieldSelectors
     OverloadedRecordDot
 
-  default-language:   GHC2024
+  default-language: GHC2024
 
 common warnings
   ghc-options:
-    -Wall -Wcompat -Widentities -Wpartial-fields
-    -Wredundant-constraints -fhide-source-paths -fshow-hole-constraints
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wpartial-fields
+    -Wredundant-constraints
+    -fhide-source-paths
+    -fshow-hole-constraints
     -Wunused-packages
 
 library
@@ -36,47 +41,49 @@ library
     Cli
     IdentityTable.Model
     IdentityTable.Query
-    Migrations
     Migaman
+    Migrations
 
   build-depends:
-    , base                  ^>=4.20.2.0
-    , beam-core
-    , beam-sqlite
-    , bytestring
-    , directory
-    , filepath
-    , file-embed
-    , migadu
-    , migrant-core
-    , migrant-sqlite-simple
-    , optparse-applicative
-    , random
-    , sqlite-simple
-    , tabular
-    , text
-    , toml-reader
+    base ^>=4.20.2.0,
+    beam-core,
+    beam-sqlite,
+    bytestring,
+    directory,
+    file-embed,
+    filepath,
+    migadu,
+    migrant-core,
+    migrant-sqlite-simple,
+    optparse-applicative,
+    random,
+    sqlite-simple,
+    tabular,
+    text,
+    toml-reader,
 
-  hs-source-dirs:   src
+  hs-source-dirs: src
 
 executable migaman
   import:
     warnings
     , common-extensions
-  main-is:          Main.hs
-  build-depends:
-    , base     ^>=4.20.2.0
-    , migaman
 
-  hs-source-dirs:   app
+  main-is: Main.hs
+  build-depends:
+    base ^>=4.20.2.0,
+    migaman,
+
+  hs-source-dirs: app
 
 test-suite migaman-test
   import:
     warnings
     , common-extensions
-  type:             exitcode-stdio-1.0
-  hs-source-dirs:   test
-  main-is:          Main.hs
+
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
   build-depends:
-    , base     ^>=4.20.2.0
-    , migaman
+    base ^>=4.20.2.0,
+    migaman,

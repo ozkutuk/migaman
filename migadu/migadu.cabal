@@ -1,12 +1,12 @@
-cabal-version:   3.0
-name:            migadu
-version:         0.1.0.0
-license:         GPL-3.0-or-later
-license-file:    LICENSE
-author:          Berk Özkütük
-maintainer:      berk@ozkutuk.me
-category:        Web
-build-type:      Simple
+cabal-version: 3.0
+name: migadu
+version: 0.1.0.0
+license: GPL-3.0-or-later
+license-file: LICENSE
+author: Berk Özkütük
+maintainer: berk@ozkutuk.me
+category: Web
+build-type: Simple
 extra-doc-files: CHANGELOG.md
 
 common common-extensions
@@ -16,13 +16,19 @@ common common-extensions
     NoFieldSelectors
     OverloadedRecordDot
 
-  default-language:   GHC2024
+  default-language: GHC2024
 
 common warnings
   ghc-options:
-    -Wall -Wcompat -Widentities -Wpartial-fields
-    -Wredundant-constraints -fhide-source-paths -fshow-hole-constraints
-    -Wunused-packages -Wunticked-promoted-constructors
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wpartial-fields
+    -Wredundant-constraints
+    -fhide-source-paths
+    -fshow-hole-constraints
+    -Wunused-packages
+    -Wunticked-promoted-constructors
 
 library
   import:
@@ -36,24 +42,24 @@ library
     Migadu.Mailbox
 
   build-depends:
-    , aeson
-    , base        ^>=4.20.2.0
-    , bytestring
-    , req
-    , text
-    , time
-    , typed-process
+    aeson,
+    base ^>=4.20.2.0,
+    bytestring,
+    req,
+    text,
+    time,
+    typed-process,
 
-  hs-source-dirs:  src
+  hs-source-dirs: src
 
 test-suite migadu-test
   import:
     warnings
     , common-extensions
 
-  type:           exitcode-stdio-1.0
+  type: exitcode-stdio-1.0
   hs-source-dirs: test
-  main-is:        Main.hs
+  main-is: Main.hs
   build-depends:
-    , base    ^>=4.20.2.0
-    , migadu
+    base ^>=4.20.2.0,
+    migadu,
