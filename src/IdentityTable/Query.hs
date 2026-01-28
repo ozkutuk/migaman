@@ -1,4 +1,11 @@
-module IdentityTable.Query (insertIdentity, insertIdentities, getIdentities, getIdentity, toggleIdentity) where
+module IdentityTable.Query
+  ( insertIdentity
+  , insertIdentities
+  , getIdentities
+  , getIdentity
+  , toggleIdentity
+  , deleteIdentity
+  ) where
 
 import Data.Text (Text)
 import Database.Beam qualified as Beam
@@ -97,8 +104,13 @@ insertIdentities domain target identities conn =
     toTable :: (Text, Migadu.Identity Migadu.Read) -> Model.IdentityTable (Beam.QExpr Beam.Sqlite s)
     toTable (accountName, identity) = toIdentityTable accountName domain target identity
 
--- where
---   toIdentityTableImported
---     :: Migadu.Identity Migadu.Read -> Model.IdentityTable (Beam.QExpr Beam.Sqlite s)
---   toIdentityTableImported identity =
---     toIdentityTable ("imported-" <> identity.localPart) domain target identity
+deleteIdentity :: Text -> Sqlite.Connection -> IO ()
+deleteIdentity accountName conn =
+  Beam.runBeamSqlite conn $
+    Beam.runDelete deleteIdentity'
+  where
+    deleteIdentity' :: Beam.SqlDelete Beam.Sqlite Model.IdentityTable
+    deleteIdentity' =
+      Beam.delete
+        Model.migamanDb.identity
+        (\acc -> acc.account Beam.==. Beam.val_ accountName)

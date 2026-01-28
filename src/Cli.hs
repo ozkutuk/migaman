@@ -51,6 +51,12 @@ command =
             (EnableAlias <$> accountName)
             (Opt.progDesc "Enable an alias")
         )
+      <> Opt.command
+        "delete"
+        ( Opt.info
+            (DeleteAlias <$> accountName)
+            (Opt.progDesc "Delete an alias")
+        )
   where
     importOptions :: Opt.Parser ImportOptions
     importOptions =
@@ -104,6 +110,8 @@ data Command (phase :: Phase)
     DisableAlias Text
   | -- | account name
     EnableAlias Text
+  | -- | account name
+    DeleteAlias Text
 
 type family ImportCommand (phase :: Phase) where
   ImportCommand OptionPhase = ImportOptions
@@ -214,6 +222,7 @@ merge globals cmd config = Env dbPath <$> auth <*> cmd'
           pure $ ImportEnv {domain, target}
       DisableAlias accountName -> pure $ DisableAlias accountName
       EnableAlias accountName -> pure $ EnableAlias accountName
+      DeleteAlias accountName -> pure $ DeleteAlias accountName
       where
         optError :: String -> IO a
         optError opt = die $ "option not set: " <> opt
