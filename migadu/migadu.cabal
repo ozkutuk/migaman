@@ -1,30 +1,22 @@
 cabal-version:   3.0
 name:            migadu
 version:         0.1.0.0
-
--- synopsis:
--- description:
 license:         GPL-3.0-or-later
 license-file:    LICENSE
 author:          Berk Özkütük
 maintainer:      berk@ozkutuk.me
-
--- copyright:
 category:        Web
 build-type:      Simple
 extra-doc-files: CHANGELOG.md
 
--- extra-source-files:
-
 common common-extensions
   default-extensions:
-    DataKinds
-    DerivingStrategies
+    DeriveAnyClass
     DuplicateRecordFields
-    LambdaCase
+    NoFieldSelectors
     OverloadedRecordDot
 
-  default-language:   GHC2021
+  default-language:   GHC2024
 
 common warnings
   ghc-options:
@@ -43,11 +35,9 @@ library
     Migadu.Identity
     Migadu.Mailbox
 
-  -- other-modules:
-  -- other-extensions:
   build-depends:
     , aeson
-    , base        ^>=4.19.1.0
+    , base        ^>=4.20.2.0
     , bytestring
     , req
     , text
@@ -61,11 +51,9 @@ test-suite migadu-test
     warnings
     , common-extensions
 
-  -- other-modules:
-  -- other-extensions:
   type:           exitcode-stdio-1.0
   hs-source-dirs: test
   main-is:        Main.hs
   build-depends:
-    , base    ^>=4.19.1.0
+    , base    ^>=4.20.2.0
     , migadu

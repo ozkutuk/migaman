@@ -1,15 +1,10 @@
 cabal-version:   3.0
 name:            migaman
 version:         0.1.0
-
--- synopsis:
--- description:
 license:         GPL-3.0-or-later
 license-file:    LICENSE
 author:          Berk Özkütük
 maintainer:      berk@ozkutuk.me
-
--- copyright:
 category:        Web
 build-type:      Simple
 extra-doc-files: CHANGELOG.md
@@ -19,15 +14,12 @@ extra-source-files:
 
 common common-extensions
   default-extensions:
-    DataKinds
     DeriveAnyClass
-    DerivingStrategies
     DuplicateRecordFields
-    LambdaCase
     NoFieldSelectors
     OverloadedRecordDot
 
-  default-language:   GHC2021
+  default-language:   GHC2024
 
 common warnings
   ghc-options:
@@ -48,7 +40,7 @@ library
     Migaman
 
   build-depends:
-    , base                  ^>=4.19.1.0
+    , base                  ^>=4.20.2.0
     , beam-core
     , beam-sqlite
     , bytestring
@@ -66,24 +58,25 @@ library
     , toml-reader
 
   hs-source-dirs:   src
-  default-language: GHC2021
 
 executable migaman
-  import:           warnings
+  import:
+    warnings
+    , common-extensions
   main-is:          Main.hs
   build-depends:
-    , base     ^>=4.19.1.0
+    , base     ^>=4.20.2.0
     , migaman
 
   hs-source-dirs:   app
-  default-language: GHC2021
 
 test-suite migaman-test
-  import:           warnings
-  default-language: GHC2021
+  import:
+    warnings
+    , common-extensions
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test
   main-is:          Main.hs
   build-depends:
-    , base     ^>=4.19.1.0
+    , base     ^>=4.20.2.0
     , migaman
