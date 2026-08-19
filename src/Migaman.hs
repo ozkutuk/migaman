@@ -5,7 +5,7 @@ module Migaman where
 
 import Cli (Command (..), GlobalOptions)
 import Cli qualified
-import Control.Monad (replicateM, void, (<=<))
+import Control.Monad (replicateM, void, when, (<=<))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BSC
@@ -105,6 +105,31 @@ disableAlias = toggleAlias False
 enableAlias :: Text -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
 enableAlias = toggleAlias True
 
+deleteAlias :: Text -> Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+deleteAlias accountName auth conn = do
+  mIdentity <- Query.getIdentity accountName conn
+  case mIdentity of
+    Nothing -> die $ "Account \"" <> T.unpack accountName <> "\" does not exist."
+    Just identity -> do
+      deletionConfirmed <- confirmDeletion identity
+      when deletionConfirmed $ do
+        let updateIdentity = Migadu.IdentitiesDelete identity.domain identity.target identity.localpart
+        void $ Migadu.runMigadu auth updateIdentity
+        Query.deleteIdentity accountName conn
+        TIO.putStrLn $ "Alias deleted."
+
+confirmDeletion :: Identity' -> IO Bool
+confirmDeletion identity = do
+  TIO.putStrLn $
+    "You are about the delete the following alias:\n\t"
+      <> renderIdentity identity
+      <> "\nProceed? [y/N]"
+  response <- TIO.getLine
+  pure $ response == "y" || response == "Y"
+
+renderIdentity :: Identity' -> Text
+renderIdentity identity = identity.account <> " <" <> identity.localpart <> "@" <> identity.domain <> ">"
+
 ensureConfigFile :: IO FilePath
 ensureConfigFile = do
   configPath <- Dir.getXdgDirectory Dir.XdgConfig "migaman.toml"
@@ -149,6 +174,7 @@ main = do
       GenerateAlias options -> generateAlias options env.auth conn
       DisableAlias accountName -> disableAlias accountName env.auth conn
       EnableAlias accountName -> enableAlias accountName env.auth conn
+      DeleteAlias accountName -> deleteAlias accountName env.auth conn
   where
     opts :: Opt.ParserInfo (GlobalOptions, Command Cli.OptionPhase)
     opts = Opt.info (Cli.parser Opt.<**> Opt.helper) Opt.fullDesc
