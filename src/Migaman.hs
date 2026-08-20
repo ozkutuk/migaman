@@ -10,6 +10,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BSC
 import Data.FileEmbed qualified as Embed
+import Data.Foldable (for_)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
@@ -21,7 +22,7 @@ import Migadu qualified
 import Migrations qualified
 import Options.Applicative qualified as Opt
 import System.Directory qualified as Dir
-import System.Exit (die)
+import System.Exit (die, exitSuccess)
 import System.FilePath qualified as FilePath
 import System.Random.Stateful qualified as RandomS
 import TOML qualified as Toml
@@ -116,7 +117,6 @@ deleteAlias accountName auth conn = do
         let updateIdentity = Migadu.IdentitiesDelete identity.domain identity.target identity.localpart
         void $ Migadu.runMigadu auth updateIdentity
         Query.deleteIdentity accountName conn
-        TIO.putStrLn $ "Alias deleted."
 
 confirmDeletion :: Identity' -> IO Bool
 confirmDeletion identity = do
@@ -129,6 +129,30 @@ confirmDeletion identity = do
 
 renderIdentity :: Identity' -> Text
 renderIdentity identity = identity.account <> " <" <> identity.localpart <> "@" <> identity.domain <> ">"
+
+confirmDeletionMulti :: [Identity'] -> IO Bool
+confirmDeletionMulti identities = do
+  TIO.putStrLn $
+    "You are about the delete the following disabled aliases:\n"
+      <> T.unlines (map (T.cons '\t' . renderIdentity) identities)
+      <> "Proceed? [y/N]"
+  response <- TIO.getLine
+  pure $ response == "y" || response == "Y"
+
+pruneAliases :: Migadu.MigaduAuth -> Sqlite.Connection -> IO ()
+pruneAliases auth conn = do
+  unusedAliases <- Query.getDisabledIdentities conn
+
+  when (null unusedAliases) $ do
+    TIO.putStrLn "You have no disabled aliases."
+    exitSuccess
+
+  deletionConfirmed <- confirmDeletionMulti unusedAliases
+  when deletionConfirmed $ do
+    for_ unusedAliases $ \identity -> do
+      let updateIdentity = Migadu.IdentitiesDelete identity.domain identity.target identity.localpart
+      void $ Migadu.runMigadu auth updateIdentity
+      Query.deleteIdentity identity.account conn
 
 ensureConfigFile :: IO FilePath
 ensureConfigFile = do
@@ -175,6 +199,7 @@ main = do
       DisableAlias accountName -> disableAlias accountName env.auth conn
       EnableAlias accountName -> enableAlias accountName env.auth conn
       DeleteAlias accountName -> deleteAlias accountName env.auth conn
+      PruneAliases -> pruneAliases env.auth conn
   where
     opts :: Opt.ParserInfo (GlobalOptions, Command Cli.OptionPhase)
     opts = Opt.info (Cli.parser Opt.<**> Opt.helper) Opt.fullDesc

@@ -3,6 +3,7 @@ module IdentityTable.Query
   , insertIdentities
   , getIdentities
   , getIdentity
+  , getDisabledIdentities
   , toggleIdentity
   , deleteIdentity
   ) where
@@ -28,6 +29,14 @@ getIdentity accountName conn = do
           Beam.all_ Model.migamanDb.identity
   Beam.runBeamSqlite conn $ do
     Beam.runSelectReturningOne $ Beam.select account
+
+getDisabledIdentities :: Sqlite.Connection -> IO [Model.Identity']
+getDisabledIdentities conn = do
+  let disabledAliases =
+        Beam.filter_ (\acc -> acc.enabled Beam.==. Beam.val_ False) $
+          Beam.all_ Model.migamanDb.identity
+  Beam.runBeamSqlite conn $ do
+    Beam.runSelectReturningList $ Beam.select disabledAliases
 
 toggleIdentity :: Bool -> Text -> Sqlite.Connection -> IO ()
 toggleIdentity enabled accountName conn = do
